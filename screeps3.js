@@ -311,7 +311,7 @@ function rS() {
                 // Military Creeps
                 for ( var i = 0; i < 16; i++ ) {
                     // Clear a source of energy, cost 15,000 per 1,500s
-                    if ( ( spawner.room.memory.storedEnergy > 75000 || spawner.name == 'a' || spawner.name == 'd' ) && ( Game.flags['qm'+i] || Game.flags['oqm'+i] ) && Game.flags['qm'+i+'x'] === undefined ) {  
+                    if ( ( spawner.room.memory.storedEnergy > 75000 ) && ( Game.flags['qm'+i] || Game.flags['oqm'+i] ) && Game.flags['qm'+i+'x'] === undefined ) {  
                         var targetRoom = null;
                         if ( Game.flags['qm'+i] ) targetRoom = Game.flags['qm'+i].room;
                         if ( !targetRoom && Game.flags['oqm'+i] ) targetRoom = Game.flags['oqm'+i].room;
