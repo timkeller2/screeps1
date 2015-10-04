@@ -1,35 +1,37 @@
-// console.log( 'Start tick a ' + Game.time + ' ' + Game.cpuLimit );
-
 var avail = 0, hostility = 0, cpuR = 0, cpuC = 0, cpuS = 0, roomsexp = 0, loot = null, lootAmount = 0, lootroom = '', notHurt = true, tempStorageLimit = 3000, hostileName = '', hostileRoom = '', topUser = null, topUserAmount = 0, maxHostile = 9999, allDrop = [], harvFull = .75, mapping = 0, totalStored = 0, totalFriends = 0, totEvadeCpu = 0;
-var maxNodes = 750;
+var maxNodes = 1500, allies = [ 'theAEmix', 'Waveofbabies', 'Vertigan' ];
 if ( Game.flags.nosrc ) maxHostile = 4500;
 
-rF();  // Run Flags
-rR();  // Run Rooms
-rC();  // Run Creeps
-rS();  // Run Spawners
+runScreeps();
 
-Memory.cpu = Memory.cpu + cpuR + cpuC + cpuS;
-Memory.lastcpu = cpuR + cpuC + cpuS;
 
-if( cpuR + cpuC + cpuS > 300 ) console.log( 'CPU: Rooms: '+ Math.floor( cpuR ) + '  Creeps: ' + Math.floor( cpuC ) + '  Spawners: ' + Math.floor( cpuS ) + '  Top User: ' + topUser.name + ' ' + topUser.pos + '  e: ' + topUser.memory.epathed +  '  CPU: ' + topUser.memory.usedCpu1 + ', ' + topUser.memory.usedCpu2 + ', ' + topUser.memory.usedCpu3 + ', Total: ' + topUser.memory.usedCpu + '  Creeps Mapping: ' + mapping );
-if ( totEvadeCpu > 50 ) console.log( 'Evasion Cpu: ' + totEvadeCpu );
-
-if ( Game.time / 10 == Math.floor( Game.time / 10 ) ) {
-    if ( Game.flags.houseCleaning ) houseCleaning();
-    console.log( ' ' );
-    console.log( 'TURN ' + Game.time + '  -------------------------------------------------------------------------------------------------------------------------- ' );
-    for( var ms in Game.spawns ) { 
-        var sp = Game.spawns[ms];
-        var creep = sp.spawning ? sp.spawning.name : '';
-        console.log( sp.name + '  Rooms: ' + roomsexp + '  Bots: ' + sp.memory.friends + '  Mil: '+ sp.memory.military + '  Art: '+ sp.memory.artillery + '  Heal: '+ sp.memory.healers +'  Carry: ' + sp.memory.carriers + '  Builds: ' + sp.memory.parts*3 + '/1500  Dying: '+ sp.memory.sick + '% load   Stored: ' + sp.room.memory.storedEnergy + '  Spawning: ' + creep );
-        totalFriends += sp.memory.friends;
+function runScreeps() {
+    rF();  // Run Flags
+    rR();  // Run Rooms
+    rC();  // Run Creeps
+    rS();  // Run Spawners
+    
+    Memory.cpu = Memory.cpu + cpuR + cpuC + cpuS;
+    Memory.lastcpu = cpuR + cpuC + cpuS;
+    
+    if( cpuR + cpuC + cpuS > 300 ) console.log( 'CPU: Rooms: '+ Math.floor( cpuR ) + '  Creeps: ' + Math.floor( cpuC ) + '  Spawners: ' + Math.floor( cpuS ) + '  Top User: ' + topUser.name + ' ' + topUser.pos + '  e: ' + topUser.memory.epathed +  '  CPU: ' + topUser.memory.usedCpu1 + ', ' + topUser.memory.usedCpu2 + ', ' + topUser.memory.usedCpu3 + ', Total: ' + topUser.memory.usedCpu + '  Creeps Mapping: ' + mapping );
+    if ( totEvadeCpu > 50 ) console.log( 'Evasion Cpu: ' + totEvadeCpu );
+    
+    if ( Game.time / 10 == Math.floor( Game.time / 10 ) ) {
+        if ( Game.flags.houseCleaning ) houseCleaning();
+        console.log( ' ' );
+        console.log( 'TURN ' + Game.time + '  -------------------------------------------------------------------------------------------------------------------------- ' );
+        for( var ms in Game.spawns ) { 
+            var sp = Game.spawns[ms];
+            var creep = sp.spawning ? sp.spawning.name : '';
+            console.log( sp.name + '  Rooms: ' + roomsexp + '  Bots: ' + sp.memory.friends + '  Mil: '+ sp.memory.military + '  Art: '+ sp.memory.artillery + '  Heal: '+ sp.memory.healers +'  Carry: ' + sp.memory.carriers + '  Builds: ' + sp.memory.parts*3 + '/1500  Dying: '+ sp.memory.sick + '% load   Stored: ' + sp.room.memory.storedEnergy + '  Spawning: ' + creep );
+            totalFriends += sp.memory.friends;
+        }
+        console.log( 'Total Stored: ' + totalStored + '  Avail: ' + avail + '  Hostility: ' + hostility + ' ' + hostileName + ' ' + hostileRoom + '  Loot: ' + lootAmount + ' in '+lootroom+'  AvCpu: ' + Math.floor(Memory.cpu/10) + '/' + Game.cpuLimit + '  Skipped Bots: ' + Math.floor( Memory.skips / 10 ) + '/' + totalFriends );
+        Memory.cpu = 0;
+        Memory.skips = 0;
     }
-    console.log( 'Total Stored: ' + totalStored + '  Avail: ' + avail + '  Hostility: ' + hostility + ' ' + hostileName + ' ' + hostileRoom + '  Loot: ' + lootAmount + ' in '+lootroom+'  AvCpu: ' + Math.floor(Memory.cpu/10) + '/' + Game.cpuLimit + '  Skipped Bots: ' + Math.floor( Memory.skips / 10 ) + '/' + totalFriends );
-    Memory.cpu = 0;
-    Memory.skips = 0;
 }
-// console.log( 'End tick ' + Game.time + ' ' + Math.floor( Game.getUsedCpu() ) + '/' + Game.cpuLimit );
 
 function houseCleaning() {
     for(var i in Memory.creeps) {
@@ -49,7 +51,7 @@ function rF() {
         var fl = Game.flags[flagname];
         
         if ( fl.room ) {
-            if ( Game.time / 11 == Math.floor( Game.time / 11 ) ) {
+            if ( Game.time / 7 == Math.floor( Game.time / 7 ) ) {
                 var ener = fl.pos.findInRange( FIND_DROPPED_ENERGY, 2 ), tot = 0;
                 for ( var i = 0; i < ener.length; i++ ) { tot += ener[i].energy; }
                 fl.memory.tot = tot;
@@ -64,7 +66,6 @@ function rR() {
     cpuR = Game.getUsedCpu();
     for ( var roomname in Game.rooms ) {
         var rm = Game.rooms[roomname], stored = 0;
-        // console.log( Game.time + ' ' + rm.name + ' ' + Game.getUsedCpu() );
         roomsexp += 1;
         
         // Reboot Path Caching
@@ -91,9 +92,9 @@ function rR() {
         for ( var i = 0; i < rm.memory.storedEnergy.length; i++ ) { stored += rm.memory.storedEnergy[i].energy; rm.memory.storedEnergy[i].pos.lookFor('creep')[0].memory.storedEnergy = rm.memory.storedEnergy[i].energy * -1; }
         if ( rm.storage && rm.storage.owner.username == 'Vision' ) stored += rm.storage.store.energy;
         
-        var hos = rm.find( FIND_HOSTILE_CREEPS, { filter: function(object) { return object.hitsMax < maxHostile && !( object.owner.username == 'Waveofbabies' || object.owner.username == 'theAEmix' ); } } );
+        var hos = rm.find( FIND_HOSTILE_CREEPS, { filter: function(object) { return object.hitsMax < maxHostile && allies.indexOf( object.owner.username ) < 0; } } );
         for ( var i = 0; i < hos.length; i++ ) {
-            if ( hos[i].hitsMax < 4500 && !( hos[i].owner.username == 'Waveofbabies' || hos[i].owner.username == 'theAEmix' ) ) {
+            if ( hos[i].hitsMax < 4500 && allies.indexOf( hos[i].owner.username ) < 0 ) {
                 if ( hos[i].getActiveBodyparts(ATTACK) > 0 ) { hostility += hos[i].getActiveBodyparts(ATTACK); hostileName = hos[i].owner.username; hostileRoom = hos[i].room.name; }
                 if ( hos[i].getActiveBodyparts(RANGED_ATTACK) > 0 ) { hostility += hos[i].getActiveBodyparts(RANGED_ATTACK); hostileName = hos[i].owner.username; hostileRoom = hos[i].room.name; }
                 if ( hos[i].getActiveBodyparts(HEAL) > 0 ) { hostility += hos[i].getActiveBodyparts(HEAL); hostileName = hos[i].owner.username; hostileRoom = hos[i].room.name; }
@@ -131,7 +132,7 @@ function rS() {
     
             var ex = spawner.room.find( FIND_STRUCTURES, { filter: function( object ) { return object.energyCapacity == 50; } } ).length;
             var exe = Math.floor( ( spawner.room.energyAvailable - 300 ) / 50 );
-            var enemies = spawner.room.find( FIND_HOSTILE_CREEPS, { filter: function( object ) { return ( object.getActiveBodyparts(ATTACK) > 0 || object.getActiveBodyparts(RANGED_ATTACK) > 0 ) && object.hitsMax < maxHostile && !( object.owner.username == 'Waveofbabies' || object.owner.username == 'theAEMix' ); } } );
+            var enemies = spawner.room.find( FIND_HOSTILE_CREEPS, { filter: function( object ) { return ( object.getActiveBodyparts(ATTACK) > 0 || object.getActiveBodyparts(RANGED_ATTACK) > 0 ) && object.hitsMax < maxHostile && allies.indexOf( object.owner.username ) < 0; } } );
             var friends = spawner.room.find( FIND_MY_CREEPS );
             var sites = spawner.room.find( FIND_CONSTRUCTION_SITES );
             
@@ -391,7 +392,7 @@ function rS() {
             }
             
             // Pipeline Creeps
-            for ( var i = 0; i < 17; i++ ) {
+            for ( var i = 0; i < 24; i++ ) {
                 if ( Game.flags['p'+i+suf] && Game.creeps['p'+i+suf] === undefined ) { if ( spawner.createCreep( l, 'p'+i+suf, { role: 'sup', lift: i+1 } ) === 0 ) continue; }
                 if ( Game.flags['l'+i+suf] && Game.creeps['l'+i+suf] === undefined ) { if ( spawner.createCreep( l, 'l'+i+suf, { role: 'sup', lift: i+1 } ) === 0 ) continue; }
                 if ( Game.flags['o'+i+suf] && Game.creeps['o'+i+suf] === undefined ) { if ( spawner.createCreep( o, 'o'+i+suf, { share: i+1 } ) === 0 ) continue; }
@@ -447,6 +448,9 @@ function rC() {
     	    if ( Game.time / 12 == Math.floor( Game.time /12 ) && creep.memory.mil ) console.log( creep.name + ' being built!');
     	    continue;
     	}
+    	
+    	if ( creep.name.substring(0,1) == 'l' && creep.carry.energy == 0 ) creep.suicide();
+    	if ( Game.flags.kill && creep.pos.inRangeTo( Game.flags.kill, 0 ) ) creep.suicide();
 
         if ( creep.memory.lastDrop === undefined ) creep.memory.lastDrop = 0;
         creep.memory.lastDrop = creep.memory.lastDrop + 1;
@@ -487,7 +491,7 @@ function rC() {
     	var nearestSpawner = creep.pos.findClosestByRange( FIND_MY_SPAWNS );
     	var nearestFriend = creep.pos.findClosestByRange( FIND_MY_CREEPS, { filter: function(object) { return creep != object;  } } );
     	var nearestMiner = creep.pos.findClosestByRange( FIND_MY_CREEPS, { filter: function(object) { return object.memory.role == 'miner' && creep != object;  } } );
-    	var nearestEnemy = creep.pos.findClosestByRange( FIND_HOSTILE_CREEPS, { filter: function(object) { return object.hitsMax < maxHostile && ( object.getActiveBodyparts( ATTACK ) || object.getActiveBodyparts( RANGED_ATTACK ) ) && !( object.owner.username == 'Waveofbabies' || object.owner.username == 'theAEmix' );  } } );
+    	var nearestEnemy = creep.pos.findClosestByRange( FIND_HOSTILE_CREEPS, { filter: function(object) { return object.hitsMax < maxHostile && ( object.getActiveBodyparts( ATTACK ) || object.getActiveBodyparts( RANGED_ATTACK ) ) && allies.indexOf( object.owner.username ) < 0;  } } );
     	var nearestMil = creep.pos.findClosestByRange( FIND_MY_CREEPS, { filter: function(object) { return object.memory.mil && creep.hitsMax > 1000 && creep != object;  } } );
 	    var link = creep.pos.findClosestByRange( FIND_MY_STRUCTURES, { filter: function(object) { return object.pos.inRangeTo( creep, 1 ) && object.structureType == STRUCTURE_LINK; } } );
 	    if ( link ) creep.memory.linked = true; else creep.memory.linked = false;
@@ -546,7 +550,7 @@ function rC() {
             }
             
             if ( target ) {
-                if ( target.owner && ( target.owner.username == 'Waveofbabies' || target.owner.username == 'theAEmix' ) ) {
+                if ( target.owner && allies.indexOf( target.owner.username ) > -1 ) {
                     creep.say( 'ignoring' );
                 } else {
                     creepFiring = true;
@@ -602,7 +606,7 @@ function rC() {
             }
             
             if ( target ) {
-                if ( target.owner && ( target.owner.username == 'Waveofbabies' || target.owner.username == 'theAEmix' ) ) {
+                if ( target.owner && allies.indexOf( target.owner.username ) > -1 ) {
                     creep.say( 'ignoring' );
                 } else {
                     creepAttacking = true;
@@ -996,8 +1000,8 @@ function rC() {
 }
 
 function whatBase( creep ) {
-    if ( ['W15N1','W14N1','W16N2','W15N2','W14N2'].indexOf(creep.room.name) > -1 ) return Game.spawns['a'];
-    if ( ['W12N1','W11N1','W12N2','W11N2','W13N1','W13N2'].indexOf(creep.room.name) > -1 ) return Game.spawns['b'];
+    if ( ['W15N1','W14N1','W16N2','W15N2','W14N2','W13N1'].indexOf(creep.room.name) > -1 ) return Game.spawns['a'];
+    if ( ['W12N1','W11N1','W12N2','W11N2','W13N2'].indexOf(creep.room.name) > -1 ) return Game.spawns['b'];
     if ( ['W15N3','W15N4','W16N4','W16N3','W16N5','W12N3','W13N3','W15N6','W14N4'].indexOf(creep.room.name) > -1 ) return Game.spawns['c'];
     if ( ['W12N5','W13N5','W13N4','W12N4','W15N5','W14N5'].indexOf(creep.room.name) > -1 ) return Game.spawns['g'];
     if ( ['W12N7','W11N7','W12N6','W11N6','W12N8','W13N8','W11N8','W11N7'].indexOf(creep.room.name) > -1 ) return Game.spawns['h'];
