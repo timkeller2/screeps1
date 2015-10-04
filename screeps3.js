@@ -1,5 +1,5 @@
 var avail = 0, hostility = 0, cpuR = 0, cpuC = 0, cpuS = 0, roomsexp = 0, loot = null, lootAmount = 0, lootroom = '', notHurt = true, tempStorageLimit = 3000, hostileName = '', hostileRoom = '', topUser = null, topUserAmount = 0, maxHostile = 9999, allDrop = [], harvFull = .75, mapping = 0, totalStored = 0, totalFriends = 0, totEvadeCpu = 0;
-var maxNodes = 1500, allies = [ 'theAEmix', 'Waveofbabies', 'Vertigan' ];
+var maxNodes = 1000, allies = [ 'theAEmix', 'Waveofbabies', 'Vertigan' ];
 if ( Game.flags.nosrc ) maxHostile = 4500;
 
 runScreeps();
@@ -437,13 +437,10 @@ function rC() {
         // Identify Military Units
     	if ( creep.getActiveBodyparts( ATTACK ) || creep.getActiveBodyparts( RANGED_ATTACK ) || creep.getActiveBodyparts( HEAL ) ) creep.memory.mil = true; else creep.memory.mil = false;
     	
-    	if ( !creep.memory.mil && Game.getUsedCpu() > Game.cpuLimit - 50 ) { Memory.skips = Memory.skips + 1; } // console.log( creep.name + ' aborts move for cpu...'); continue; }
-    	// if ( creep.memory.role == 'sup' && Game.getUsedCpu() > Game.cpuLimit - 350 ) { console.log( creep.name + ' aborts move for cpu...'); continue; }
-    	// if ( creep.memory.role == 'harv' && Game.getUsedCpu() > Game.cpuLimit - 300 ) { console.log( creep.name + ' aborts move for cpu...'); continue; }
-    	// if ( creep.memory.role == 'miner' && Game.getUsedCpu() > Game.cpuLimit - 250 ) { console.log( creep.name + ' aborts move for cpu...'); continue; }
-    	
-    	// if ( creep.memory.role == 'harv' ) continue;  // tim
+    	// Skip bots if necessary to save cpu
+    	if ( !creep.memory.mil && Game.getUsedCpu() > Game.cpuLimit - 50 ) { Memory.skips = Memory.skips + 1; continue; } 
 
+        // Skips bots under constructions, report military creeps
     	if ( creep.spawning ) {
     	    if ( Game.time / 12 == Math.floor( Game.time /12 ) && creep.memory.mil ) console.log( creep.name + ' being built!');
     	    continue;
@@ -452,8 +449,6 @@ function rC() {
     	if ( creep.name.substring(0,1) == 'l' && creep.carry.energy == 0 ) creep.suicide();
     	if ( Game.flags.kill && creep.pos.inRangeTo( Game.flags.kill, 0 ) ) creep.suicide();
 
-        if ( creep.memory.lastDrop === undefined ) creep.memory.lastDrop = 0;
-        creep.memory.lastDrop = creep.memory.lastDrop + 1;
         if ( ( creep.pos.x == 49 || creep.pos.x == 0 || creep.pos.y == 49 || creep.pos.y == 0 ) && creep.pos.findInRange( FIND_MY_CREEPS, 1 ).length > 1 ) {
             if ( creep.room.memory.gridlockBeaker ) creep.room.memory.gridlockBreaker = false; else m( creep, creep );
         }
@@ -689,7 +684,6 @@ function rC() {
         	        if ( !source && creep.room.storage && creep.pos.inRangeTo( creep.room.storage, 1) ) source = creep.room.storage;
         	        if ( !source ) source = creep.pos.findClosestByRange( FIND_MY_CREEPS, { filter: function(object) { return object.memory.role == 'storage' && ( Math.abs(object.memory.storedEnergy) < creep.room.memory.tempStorageLimit || !creep.room.storage ) && object.pos.inRangeTo( creep, 1) && object != creep && !link; } } );
         	        if ( !source ) source = creep.pos.findClosestByRange( FIND_MY_CREEPS, { filter: function(object) { return ( ( object.memory.target && object.memory.target == creep.name ) || object.memory.role == 'sup' || object.getActiveBodyparts( WORK ) > 0 ) && object.pos.inRangeTo( creep, 1) && object != creep && object.memory.role != 'harv' && ( object.memory.role != 'miner' || ( creep.memory.role == 'miner' && object.memory.accum ) ) ; } } );
-        	        // if ( !source ) source = creep.pos.findClosestByRange( FIND_MY_CREEPS, { filter: function(object) { return object.pos.inRangeTo( creep, 1) && object != creep && object.memory.role == 'harv' && object.carry.energy == 0 && object.memory.lastDrop < creep.memory.lastDrop; } } );
         	        if ( !source ) {
                 	    var storage = Game.creeps['s'+suf], slider = null;
             	        if ( base ) source = base; 
@@ -712,7 +706,6 @@ function rC() {
             
     	    if ( source && source.pos && source.pos.inRangeTo( creep, 1 ) ) { 
     	        creep.transferEnergy( source );
-    	        if ( creep.memory.spr < 3 ) creep.memory.lastDrop = 0;
     	    }  
     	} 
 
@@ -1063,9 +1056,11 @@ function evade( creep, enemy ) {
 
 function avoidMap( creep, hostile ) {
     var map = [];
+    if ( !creep || !hostile ) return map;
     if ( hostile ) {
         var r = range( creep.pos.x, creep.pos.y, hostile.pos.x, hostile.pos.y );
-        if ( r > 1 ) r = 1;
+        if ( r > 2 ) r = 2;
+        if ( r < 1 ) r = 1;
         for ( var x = hostile.pos.x - r; x <= hostile.pos.x + r; x++ ) {
             for ( var y = hostile.pos.y - r; y <= hostile.pos.y + r; y++ ) {
                 if ( hostile.room.getPositionAt( x, y ) ) if ( hostile.room.getPositionAt( x, y ) != creep.pos ) map[map.length] = hostile.room.getPositionAt( x, y );
