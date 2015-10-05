@@ -1,5 +1,5 @@
 var avail = 0, hostility = 0, cpuR = 0, cpuC = 0, cpuS = 0, roomsexp = 0, loot = null, lootAmount = 0, lootroom = '', notHurt = true, tempStorageLimit = 3000, hostileName = '', hostileRoom = '', topUser = null, topUserAmount = 0, maxHostile = 9999, allDrop = [], harvFull = .75, mapping = 0, totalStored = 0, totalFriends = 0, totEvadeCpu = 0;
-var maxNodes = 1000, allies = [ 'theAEmix', 'Waveofbabies', 'Vertigan' ];
+var maxNodes = 3000, allies = [ 'theAEmix', 'Waveofbabies', 'Vertigan' ];
 if ( Game.flags.nosrc ) maxHostile = 4500;
 
 runScreeps();
@@ -438,7 +438,7 @@ function rC() {
     	if ( creep.getActiveBodyparts( ATTACK ) || creep.getActiveBodyparts( RANGED_ATTACK ) || creep.getActiveBodyparts( HEAL ) ) creep.memory.mil = true; else creep.memory.mil = false;
     	
     	// Skip bots if necessary to save cpu
-    	if ( !creep.memory.mil && Game.getUsedCpu() > Game.cpuLimit - 50 ) { Memory.skips = Memory.skips + 1; continue; } 
+    	if ( !creep.memory.mil && Game.getUsedCpu() > Game.cpuLimit - 75 ) { Memory.skips = Memory.skips + 1; continue; } 
 
         // Skips bots under constructions, report military creeps
     	if ( creep.spawning ) {
@@ -464,8 +464,8 @@ function rC() {
 
     	// Base Calculations
     	var base = null;
-    	if ( creep.room.storage !== undefined && creep.room.storage.owner.username == 'Vision' ) base = creep.room.storage;
-    	if ( !base ) base = creep.pos.findClosestByRange( FIND_MY_SPAWNS );
+    	if ( creep.room.storage !== undefined && creep.room.storage.owner.username == 'Vision' && creep.room.storage.energy < 800000 ) base = creep.room.storage;
+    	// if ( !base ) base = creep.pos.findClosestByRange( FIND_MY_SPAWNS );
     	if ( !base ) base = whatBase( creep );
     	if ( !base ) base = Game.spawns[creep.memory.spawn];
         var suf = '';
@@ -836,7 +836,7 @@ function rC() {
             if ( !source && creep.memory.role == 'sup' && creep.carry.energy > 0 ) source = creep.pos.findClosestByRange( FIND_MY_CREEPS, { filter: function(object) { return object.memory.role != 'miner' && object.getActiveBodyparts( WORK ) > 0 && object.carry.energy < object.carryCapacity - 10; } } );
             
             // Determine where to return to to get or give energy
-            if ( creep.memory.role == 'harv' && Game.flags[creep.room.name] !== undefined ) base = Game.flags[creep.room.name];
+            // if ( creep.memory.role == 'harv' && Game.flags[creep.room.name] !== undefined ) base = Game.flags[creep.room.name];
             var altSource = base, saveAlt = base; 
             if ( creep.room.find( FIND_MY_CREEPS, { filter: function(object) { return object.memory.role == 'storage' && Math.abs(object.memory.storedEnergy) < creep.room.memory.tempStorageLimit; } } ).length > 0 && ( altSource.energy == 300 || altSource.room != creep.room ) ) {
                 var sel = -1, targs = creep.room.find( FIND_MY_CREEPS, { filter: function(object) { return object.memory.role == 'storage' && Math.abs(object.memory.storedEnergy) < creep.room.memory.tempStorageLimit && object.carry.energy < object.carryCapacity; } } ), targNeed = 99999;
@@ -993,6 +993,26 @@ function rC() {
 }
 
 function whatBase( creep ) {
+    var whichBase = null, whichRange = 99999;
+    if ( !creep.memory.base ) {
+        for( var spawnername in Game.spawns ) {
+            var spawner = Game.spawns[spawnername];
+            
+            if ( spawner.room.memory.storedEnergy < 800000 ) {
+                var ra = orange( creep, spawner ) + spawner.room.memory.storedEnergy / 10000;
+                
+                if ( ra < whichRange ) { whichBase = spawner; whichRange = ra; }
+            }
+        }
+        if ( whichBase ) creep.memory.base = whichBase.name; else creep.memory.base = null;
+    } else {
+        var spawner = null;
+        if ( Game.spawns[creep.memory.base] ) spawner = Game.spawns[creep.memory.base];
+        
+        if ( spawner && spawner.room.memory.storedEnergy > 900000 ) creep.memory.base = null; else whichBase = spawner;
+    }
+    return whichBase;
+
     if ( ['W15N1','W14N1','W16N2','W15N2','W14N2','W13N1'].indexOf(creep.room.name) > -1 ) return Game.spawns['a'];
     if ( ['W12N1','W11N1','W12N2','W11N2','W13N2'].indexOf(creep.room.name) > -1 ) return Game.spawns['b'];
     if ( ['W15N3','W15N4','W16N4','W16N3','W16N5','W12N3','W13N3','W15N6','W14N4'].indexOf(creep.room.name) > -1 ) return Game.spawns['c'];
@@ -1021,10 +1041,10 @@ function evade( creep, enemy ) {
     if ( creep.pos.inRangeTo( enemy, 4 ) && !creep.pos.inRangeTo( enemy, 1 ) ) avo = avoidMap( creep, enemy );
 
     for ( var e = 0; e < 12; e++ ) {
-        if ( creep.pos.x < enemy.pos.x || creep.pos.x > 43 ) tx = Math.floor( Math.random() * 5 ) + 1;
-        if ( creep.pos.x > enemy.pos.x || creep.pos.x < 7 ) tx =  Math.floor( Math.random() * 5 ) + 44;
-        if ( creep.pos.y < enemy.pos.y || creep.pos.y > 43 ) ty = Math.floor( Math.random() * 5 ) + 1;
-        if ( creep.pos.y > enemy.pos.y || creep.pos.y < 7 ) ty =  Math.floor( Math.random() * 5 ) + 44;
+        if ( creep.pos.x < enemy.pos.x || creep.pos.x > 43 ) tx = Math.floor( Math.random() * 6 ) + 1;
+        if ( creep.pos.x > enemy.pos.x || creep.pos.x < 7 ) tx =  Math.floor( Math.random() * 6 ) + 44;
+        if ( creep.pos.y < enemy.pos.y || creep.pos.y > 43 ) ty = Math.floor( Math.random() * 6 ) + 1;
+        if ( creep.pos.y > enemy.pos.y || creep.pos.y < 7 ) ty =  Math.floor( Math.random() * 6 ) + 44;
         
         if ( !collision( creep, tx, ty ) ) break;
     }
@@ -1044,7 +1064,7 @@ function evade( creep, enemy ) {
     var quickMove = {};
     quickMove.pos = creep.room.getPositionAt( tx, ty );
 
-    if ( !collision( creep, tx, ty ) && !creep.pos.inRangeTo( enemy, 4 ) ) {
+    if ( !collision( creep, tx, ty ) && !creep.pos.inRangeTo( enemy, 6 ) ) {
         emov( creep, quickMove );
     } else {
         // if ( !creep.memory.mil ) bypass( creep, quickMove ); else if ( Game.getUsedCpu() < Game.cpuLimit - 50 ) creep.moveTo( creep.room.getPositionAt( tx, ty ), { avoid: avo, reusePath: 0 } ); else console.log( creep.name + ' aborting move for cpu...' );
@@ -1115,19 +1135,13 @@ function mov( creep, dest, avo, ig ) {
     if ( !creep.memory.ry ) creep.memory.ry = 0;
     if ( creep.memory.rally && dest && dest.room == creep.room && ( ( dest.name && creep.memory.rally == dest.name ) && ( dest.pos.x || dest.pos.y ) && ( creep.memory.rx || creep.memory.ry ) ) ) {
         creep.memory.lastMove = creep.memory.lastMove + ' using rally code...  avo: ' + avo.length;
-        if ( creep.memory.role == 'miner' && creep.getActiveBodyparts( MOVE ) < 9 && ( ( Game.getUsedCpu() > Game.cpuLimit - 150 && creep.carry.energy == 0 ) || Game.cpuLimit < 500 ) && creep.memory.er > 5 ) { creep.memory.moveOrder = 1; Memory.skips = Memory.skips + 1; /* console.log( creep.name + ' taking a break to save cpu... ( Cpu Limit: '+Game.cpuLimit+')'); */ return; }
-        if ( creep.memory.role == 'sup' && ( ( Game.getUsedCpu() > Game.cpuLimit - 250 && creep.carry.energy == 0 ) || Game.cpuLimit < 500 ) && creep.memory.er > 5 ) { creep.memory.moveOrder = 1; Memory.skips = Memory.skips + 1; /* console.log( creep.name + ' taking a break to save cpu... ( Cpu Limit: '+Game.cpuLimit+')'); */ return; }
-        if ( creep.memory.role == 'harv' && ( ( Game.getUsedCpu() > Game.cpuLimit - 150 && creep.carry.energy == 0 ) || Game.cpuLimit < 500 ) && creep.memory.er > 5 ) { creep.memory.moveOrder = 1; Memory.skips = Memory.skips + 1; /* console.log( creep.name + ' taking a break to save cpu... ( Cpu Limit: '+Game.cpuLimit+')'); */ return; }
         if ( Game.getUsedCpu() < Game.cpuLimit - 50 ) creep.moveTo( dest.pos.x + creep.memory.rx, dest.pos.y + creep.memory.ry, { avoid: avo, reusePath: ru, ignoreCreeps: ig, maxOps: maxNodes } ); else console.log( creep.name + ' aborting move for cpu...' );
     }
     else {
         var aRoom = creep.room;
         if ( dest && dest.room !== undefined ) aRoom = dest.room;
-        if ( Game.flags.opt && ig && dest && dest.pos && dest.pos.x && dest.pos.y && aRoom.name !== undefined && !creep.pos.inRangeTo( dest, 4 ) ) emov( creep, dest ); else {
-            creep.memory.lastMove = creep.memory.lastMove + ' using bypass code...  avo: ' + avo.length + '  Ig: ' + ig;
-            if ( creep.memory.role == 'miner' && creep.getActiveBodyparts( MOVE ) < 9 && ( ( Game.getUsedCpu() > Game.cpuLimit - 150 && creep.carry.energy == 0 ) || Game.cpuLimit < 500 ) && creep.memory.er > 5 ) { creep.memory.moveOrder = 1; Memory.skips = Memory.skips + 1; /* console.log( creep.name + ' taking a break to save cpu... ( Cpu Limit: '+Game.cpuLimit+')'); */ return; }
-            if ( creep.memory.role == 'sup' && ( ( Game.getUsedCpu() > Game.cpuLimit - 250 && creep.carry.energy == 0 ) || Game.cpuLimit < 500 ) && creep.memory.er > 5 ) { creep.memory.moveOrder = 1; Memory.skips = Memory.skips + 1; /* console.log( creep.name + ' taking a break to save cpu... ( Cpu Limit: '+Game.cpuLimit+')'); */ return; }
-            if ( creep.memory.role == 'harv'  && ( ( Game.getUsedCpu() > Game.cpuLimit - 150 && creep.carry.energy == 0 ) || Game.cpuLimit < 500 ) && creep.memory.er > 5 ) { creep.memory.moveOrder = 1; Memory.skips = Memory.skips + 1; /* console.log( creep.name + ' taking a break to save cpu... ( Cpu Limit: '+Game.cpuLimit+')'); */ return; }
+        if ( Game.flags.opt && ig && dest && dest.pos && dest.pos.x && dest.pos.y && aRoom.name !== undefined && !creep.pos.inRangeTo( dest, 6 ) ) emov( creep, dest ); else {
+            creep.memory.lastMove = creep.memory.lastMove + ' using bypass code...  avo: ' + avo.length + '  Ig: ' + ig + '  dRange: ' + orange( creep, dest );
 
             // if ( !creep.memory.mil && orange( creep, dest ) < 5 ) {
             //     bypass( creep, dest );
@@ -1146,7 +1160,7 @@ function emov( creep, dest ) {
     var aRoom = creep.room;
     if ( dest && dest.room !== undefined ) aRoom = dest.room;
     var destTag = aRoom.name;
-    if ( creep.room == aRoom ) destTag = String.fromCharCode( Math.floor( dest.pos.x / 4 )+48, Math.floor( dest.pos.y / 4 )+48 ); else {
+    if ( creep.room == aRoom ) destTag = String.fromCharCode( Math.floor( dest.pos.x / 6 )+48, Math.floor( dest.pos.y / 6 )+48 ); else {
         var coo = mapCoord( destTag );
         destTag = String.fromCharCode( (97 + coo.x), (97 + coo.y) );
     }
