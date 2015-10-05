@@ -1,5 +1,5 @@
 var avail = 0, hostility = 0, cpuR = 0, cpuC = 0, cpuS = 0, roomsexp = 0, loot = null, lootAmount = 0, lootroom = '', notHurt = true, tempStorageLimit = 3000, hostileName = '', hostileRoom = '', topUser = null, topUserAmount = 0, maxHostile = 9999, allDrop = [], harvFull = .75, mapping = 0, totalStored = 0, totalFriends = 0, totEvadeCpu = 0;
-var maxNodes = 3000, allies = [ 'theAEmix', 'Waveofbabies', 'Vertigan' ];
+var maxNodes = 3000, allies = [ 'theAEmix', 'Waveofbabies', 'Vertigan' ], storageLevel = 500000;
 if ( Game.flags.nosrc ) maxHostile = 4500;
 
 runScreeps();
@@ -202,14 +202,14 @@ function rS() {
             // Base Military Units
             var g = []; if ( exe < 15 ) { addPart(g,TOUGH,4+Math.floor(exe/3)*2); addPart(g,ATTACK,2+Math.floor(exe/3)); addPart(g,MOVE,2+Math.floor(exe/3)); }
             else if ( exe < 30 ) { addPart(g,CARRY,3+Math.floor(exe/4)); addPart(g,ATTACK,1+Math.floor(exe/4)); addPart(g,MOVE,1+Math.floor(exe/4)); }
-            var a = []; if ( eex < 30 ) { addPart(a,RANGED_ATTACK,1+Math.floor(eex/4)); addPart(a,MOVE,1+Math.floor(eex/4)); } else a = ax;
+            var a = []; if ( eex < 57 ) { addPart(a,RANGED_ATTACK,1+Math.floor(eex/4)); addPart(a,MOVE,1+Math.floor(eex/4)); } else { addPart(a,RANGED_ATTACK,15); addPart(a,MOVE,15); };
             var h = []; if ( eex < 90 ) { addPart(h,HEAL,1+Math.floor(eex/6)); addPart(h,MOVE,1+Math.floor(eex/6)); } else { addPart(h,HEAL,15); addPart(h,MOVE,15); }
             
             // Advanced Military Units
             var t = [];  addPart(t,ATTACK,3+Math.floor(ex/2));  addPart(t,MOVE,1);
             var b = [];  if ( eex < 30 ) { addPart(b,MOVE,1); addPart(b,RANGED_ATTACK,1+Math.floor(ex/3)); } else { var bstr = Math.floor(ex/3); if ( bstr > hostility + 10 ) bstr = hostility + 10; if ( bstr > 29 ) bstr = 29; addPart(b,MOVE,1); addPart(b,RANGED_ATTACK,bstr); }
-            var x = [];  addPart(x,MOVE,10); addPart(x,ATTACK,20);
-            var xr = []; addPart(xr,RANGED_ATTACK,16); addPart(xr,MOVE,8);
+            var x = [];  addPart(x,MOVE,14); addPart(x,ATTACK,15); addPart(x,MOVE,1); 
+            var xr = []; addPart(xr,RANGED_ATTACK,15); addPart(xr,MOVE,15);
             var z = [];  addPart(z,MOVE,1); 
 
             if ( !spawner.memory.spawnLag ) spawner.memory.spawnLag = 0;
@@ -277,15 +277,16 @@ function rS() {
             
             if ( spawner.room.memory.storedEnergy > 10000 || enemies > 0 ) {  
                 // Minor Siege
-                if ( Game.flags.ms ) {
-                    if ( Game.creeps.msg1 === undefined && spawner.createCreep( x, 'msg1', { rally: 'ms', rx: -1, ry: 0 } ) === 0 ) continue;
-                    if ( Game.creeps.msg2 === undefined && spawner.createCreep( x, 'msg2', { rally: 'ms', rx: 0, ry: 0 } ) === 0 ) continue;
-                    if ( Game.creeps.msg3 === undefined && spawner.createCreep( x, 'msg3', { rally: 'ms', rx: 1, ry: 0 } ) === 0 ) continue;
+                if ( Game.flags.ms && orange( spawner, Game.flags.ms) < 175 ) {
+                    if ( Game.creeps.msa1 === undefined && spawner.createCreep( a, 'msa1', { rally: 'ms', rx: -3, ry: 0 } ) === 0 ) continue;
+                    if ( Game.creeps.msa2 === undefined && spawner.createCreep( a, 'msa2', { rally: 'ms', rx: -2, ry: 0 } ) === 0 ) continue;
+                    if ( Game.creeps.msa3 === undefined && spawner.createCreep( a, 'msa3', { rally: 'ms', rx: -1, ry: 0 } ) === 0 ) continue;
+                    if ( Game.creeps.msa4 === undefined && spawner.createCreep( a, 'msa4', { rally: 'ms', rx: 0, ry: 0 } ) === 0 ) continue;
+                    if ( Game.creeps.msa5 === undefined && spawner.createCreep( a, 'msa5', { rally: 'ms', rx: 1, ry: 0 } ) === 0 ) continue;
+                    if ( Game.creeps.msa6 === undefined && spawner.createCreep( a, 'msa6', { rally: 'ms', rx: 2, ry: 0 } ) === 0 ) continue;
+                    if ( Game.creeps.msa7 === undefined && spawner.createCreep( a, 'msa7', { rally: 'ms', rx: 3, ry: 0 } ) === 0 ) continue;
                     
                     if ( Game.creeps.msh1 === undefined && spawner.createCreep( hx, 'msh1', { rally: 'ms', rx: 0, ry: 1 } ) === 0 ) continue;
-
-                    if ( Game.creeps.msr1 === undefined && spawner.createCreep( xr, 'msr1', { rally: 'ms', rx: -1, ry: 1 } ) === 0 ) continue;
-                    if ( Game.creeps.msr2 === undefined && spawner.createCreep( xr, 'msr2', { rally: 'ms', rx: 1, ry: 1 } ) === 0 ) continue;
                 }
                      
                 // Siege Squad
@@ -341,13 +342,13 @@ function rS() {
     
                     // Attack Squad
                     if ( Game.flags['q'+i] || Game.flags['oq'+i] ) {  
-                        if ( spawner.createCreep( ax, 'a'+i+'q0b', { escort: 'a'+i+'q0', rally: 'q'+i } ) === 0 ) continue;
-                        if ( spawner.createCreep( ax, 'a'+i+'q0a', { escort: 'a'+i+'q0', rally: 'q'+i } ) === 0 ) continue;
-                        if ( spawner.createCreep( ax, 'a'+i+'q0',  { rally: 'q'+i } ) === 0 ) continue;
+                        if ( Game.creeps['a'+i+'q0b'] === undefined ) if ( spawner.createCreep( ax, 'a'+i+'q0b', { escort: 'a'+i+'q0', rally: 'q'+i } ) === 0 ) continue;
+                        if ( Game.creeps['a'+i+'q0a'] === undefined ) if ( spawner.createCreep( ax, 'a'+i+'q0a', { escort: 'a'+i+'q0', rally: 'q'+i } ) === 0 ) continue;
+                        if ( Game.creeps['a'+i+'q0'] === undefined ) if ( spawner.createCreep( ax, 'a'+i+'q0',  { rally: 'q'+i } ) === 0 ) continue;
                         if ( Game.creeps['a'+i+'q0'] && Game.creeps['a'+i+'q0'].ticksToLive < 450 ) {
-                            if ( spawner.createCreep( ax, 'a'+i+'q1b', { escort: 'a'+i+'q1', rally: 'q'+i } ) === 0 ) continue;
-                            if ( spawner.createCreep( ax, 'a'+i+'q1a', { escort: 'a'+i+'q1', rally: 'q'+i } ) === 0 ) continue;
-                            if ( spawner.createCreep( ax, 'a'+i+'q1', { rally: 'q'+i } ) === 0 ) continue;
+                            if ( Game.creeps['a'+i+'q1b'] === undefined ) if ( spawner.createCreep( ax, 'a'+i+'q1b', { escort: 'a'+i+'q1', rally: 'q'+i } ) === 0 ) continue;
+                            if ( Game.creeps['a'+i+'q1a'] === undefined ) if ( spawner.createCreep( ax, 'a'+i+'q1a', { escort: 'a'+i+'q1', rally: 'q'+i } ) === 0 ) continue;
+                            if ( Game.creeps['a'+i+'q1'] === undefined ) if ( spawner.createCreep( ax, 'a'+i+'q1', { rally: 'q'+i } ) === 0 ) continue;
                         }
                     }
                     
@@ -464,7 +465,7 @@ function rC() {
 
     	// Base Calculations
     	var base = null;
-    	if ( creep.room.storage !== undefined && creep.room.storage.owner.username == 'Vision' && creep.room.storage.energy < 800000 ) base = creep.room.storage;
+    	if ( creep.room.storage !== undefined && creep.room.storage.owner.username == 'Vision' && creep.room.storage.energy < storageLevel ) base = creep.room.storage;
     	// if ( !base ) base = creep.pos.findClosestByRange( FIND_MY_SPAWNS );
     	if ( !base ) base = whatBase( creep );
     	if ( !base ) base = Game.spawns[creep.memory.spawn];
@@ -524,7 +525,7 @@ function rC() {
 
             // Attack weakest nearby structure
             if ( !target && creep.pos.findInRange( FIND_MY_SPAWNS, 99 ).length == 0 ) {
-                var targets = creep.pos.findInRange( FIND_HOSTILE_STRUCTURES, 3 );
+                var targets = creep.pos.findInRange( FIND_STRUCTURES, 3, { filter: function(object) { return object.structureType != STRUCTURE_ROAD; } } );
                 var select = -1, targetNeed = 99999999, target = null;
                 
                 for( var i=0; i<targets.length; i++ ) {
@@ -782,6 +783,7 @@ function rC() {
             if ( Game.flags[creep.name] ) { m( creep, Game.flags[creep.name], 1 ); if ( creep.pos.inRangeTo( Game.flags[creep.name], 1 ) && creep.memory.dist > 3 ) Game.flags[creep.name].memory.dist = creep.memory.dist; }
             var evasion = 4;
             if ( creep.hits < creep.hitsMax ) evasion = 5;
+            if ( Game.flags[creep.room.name] !== undefined ) evasion = 2;
             if ( ( !creep.memory.mil || creep.hits < creep.hitsMax * .6 ) && creep.memory.er < evasion ) { evade( creep, nearestEnemy ); }
             if ( creep.memory.rally && Game.flags[creep.memory.rally] && Game.flags[creep.memory.rally+'stage'] && creep.room != Game.flags[creep.memory.rally+'stage'].room && creep.room != Game.flags[creep.memory.rally].room && creep.carry.energy == 0 ) m( creep, Game.flags[creep.memory.rally+'stage'], 1 );
             if ( creep.memory.rally && Game.flags[creep.memory.rally] && Game.flags[creep.memory.rally].pos != creep.pos ) { m( creep, Game.flags[creep.memory.rally], 1 ); if ( creep.pos.inRangeTo( Game.flags[creep.memory.rally], 0 ) ) Game.flags[creep.memory.rally].memory.dist = creep.memory.dist; }
@@ -836,7 +838,7 @@ function rC() {
             if ( !source && creep.memory.role == 'sup' && creep.carry.energy > 0 ) source = creep.pos.findClosestByRange( FIND_MY_CREEPS, { filter: function(object) { return object.memory.role != 'miner' && object.getActiveBodyparts( WORK ) > 0 && object.carry.energy < object.carryCapacity - 10; } } );
             
             // Determine where to return to to get or give energy
-            // if ( creep.memory.role == 'harv' && Game.flags[creep.room.name] !== undefined ) base = Game.flags[creep.room.name];
+            if ( creep.memory.role == 'harv' && Game.flags[creep.room.name] !== undefined ) base = Game.flags[creep.room.name];
             var altSource = base, saveAlt = base; 
             if ( creep.room.find( FIND_MY_CREEPS, { filter: function(object) { return object.memory.role == 'storage' && Math.abs(object.memory.storedEnergy) < creep.room.memory.tempStorageLimit; } } ).length > 0 && ( altSource.energy == 300 || altSource.room != creep.room ) ) {
                 var sel = -1, targs = creep.room.find( FIND_MY_CREEPS, { filter: function(object) { return object.memory.role == 'storage' && Math.abs(object.memory.storedEnergy) < creep.room.memory.tempStorageLimit && object.carry.energy < object.carryCapacity; } } ), targNeed = 99999;
@@ -890,9 +892,9 @@ function rC() {
             }
 
             if ( source == base || ( source && source.memory && source.memory.role == 'storage' ) ) {
-                if ( creep.room.storage ) source = creep.room.storage; else {
+                if ( creep.room.storage && creep.room.storage.owner.username == 'Vision' ) source = creep.room.storage; else {
         	        var storage = altSource;
-        	        if ( !storage && creep.room.storage ) storage = creep.room.storage;
+        	        if ( !storage && creep.room.storage && creep.room.storage.owner.username == 'Vision' ) storage = creep.room.storage;
         	        if ( source.energy == 300 && storage ) source = storage;
                 }
             }
@@ -902,7 +904,7 @@ function rC() {
     	    if ( source ) {
     	        if ( source.pos.inRangeTo( creep, 1 ) && creep.memory.role == 'harv' && altSource ) source = altSource;
     	        if ( creep.memory.role == 'harv' && creep.pos.inRangeTo( source, 1 ) && creep.carry.energy > 0 && creep.carry.energy < creep.carryCapacity * harvFull && creep.hits == creep.hitsMax ) m( creep, creep );
-        	    if ( creep.memory.er > 4 && ( creep.hits == creep.hitsMax || creep.room.find( FIND_MY_CREEPS, { filter: function( object ) { return object.getActiveBodyparts( HEAL ) > object.hitsMax / 700; } } ).length == 0 ) ) m( creep, source ); 
+        	    if ( ( creep.memory.er > 4 || Game.flags[creep.room.name] !== undefined ) && ( creep.hits == creep.hitsMax || creep.room.find( FIND_MY_CREEPS, { filter: function( object ) { return object.getActiveBodyparts( HEAL ) > object.hitsMax / 700; } } ).length == 0 ) ) m( creep, source ); 
     	    }
     	}
         creep.memory.usedCpu3 = Math.floor( Game.getUsedCpu() - startCpu );
@@ -998,7 +1000,7 @@ function whatBase( creep ) {
         for( var spawnername in Game.spawns ) {
             var spawner = Game.spawns[spawnername];
             
-            if ( spawner.room.memory.storedEnergy < 800000 ) {
+            if ( spawner.room.memory.storedEnergy < storageLevel - 50000 ) {
                 var ra = orange( creep, spawner ) + spawner.room.memory.storedEnergy / 10000;
                 
                 if ( ra < whichRange ) { whichBase = spawner; whichRange = ra; }
@@ -1009,7 +1011,7 @@ function whatBase( creep ) {
         var spawner = null;
         if ( Game.spawns[creep.memory.base] ) spawner = Game.spawns[creep.memory.base];
         
-        if ( spawner && spawner.room.memory.storedEnergy > 900000 ) creep.memory.base = null; else whichBase = spawner;
+        if ( spawner && spawner.room.memory.storedEnergy > storageLevel ) creep.memory.base = null; else whichBase = spawner;
     }
     return whichBase;
 
