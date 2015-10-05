@@ -462,13 +462,14 @@ function rC() {
 
     	// Base Calculations
     	var base = null;
-    	if ( creep.room.storage !== undefined && creep.room.storage.owner.username == 'Vision' && creep.room.storage.energy < storageLevel ) base = creep.room.storage;
-    	// if ( !base ) base = creep.pos.findClosestByRange( FIND_MY_SPAWNS );
+    	if ( creep.room.storage !== undefined && creep.room.storage.owner.username == 'Vision' && creep.room.storage.store.energy < storageLevel ) { base = creep.room.storage;  }
+    	if ( !base ) base = creep.pos.findClosestByRange( FIND_MY_SPAWNS );
     	if ( !base ) base = whatBase( creep );
     	if ( !base ) base = Game.spawns[creep.memory.spawn];
     	if ( !base ) base = Game.spawns.g;
         var suf = '';
         suf = base.name;
+
         if ( !creep.memory.spawn && creep.pos.findClosestByRange( FIND_MY_SPAWNS ) ) creep.memory.spawn = creep.pos.findClosestByRange( FIND_MY_SPAWNS ).name;
         if ( !creep.memory.dist ) creep.memory.dist = 1;
         var ex = 0;
@@ -838,7 +839,7 @@ function rC() {
             // Determine where to return to to get or give energy
             if ( creep.memory.role == 'harv' && Game.flags[creep.room.name] !== undefined ) base = Game.flags[creep.room.name];
             var altSource = base, saveAlt = base; 
-            if ( creep.room.find( FIND_MY_CREEPS, { filter: function(object) { return object.memory.role == 'storage' && Math.abs(object.memory.storedEnergy) < creep.room.memory.tempStorageLimit; } } ).length > 0 && ( altSource.energy == 300 || altSource.room != creep.room ) ) {
+            if ( creep.room.find( FIND_MY_CREEPS, { filter: function(object) { return object.memory.role == 'storage' && Math.abs(object.memory.storedEnergy) < creep.room.memory.tempStorageLimit; } } ).length > 0 && ( altSource.energy == 300 || altSource.room != creep.room ) && !creep.room.storage ) {
                 var sel = -1, targs = creep.room.find( FIND_MY_CREEPS, { filter: function(object) { return object.memory.role == 'storage' && Math.abs(object.memory.storedEnergy) < creep.room.memory.tempStorageLimit && object.carry.energy < object.carryCapacity; } } ), targNeed = 99999;
                 for ( var i = 0; i < targs.length; i++ ) {
                     if ( Math.abs( targs[i].memory.storedEnergy ) + orange( creep, targs[i] ) * 200 < targNeed ) { targNeed = Math.abs( targs[i].memory.storedEnergy ) + orange( creep, targs[i] ) * 200; sel = i; }
@@ -889,16 +890,17 @@ function rC() {
                 if ( cext ) { source = cext; creep.room.memory.iGotTheExt = creep.room.memory.iGotTheExt + 1; }
             }
 
-            if ( source == base || ( source && source.memory && source.memory.role == 'storage' ) ) {
-                if ( creep.room.storage && creep.room.storage.owner.username == 'Vision' && creep.room.storage.energy < storageLevel ) source = creep.room.storage; else {
+            if ( !source && creep.carry.energy >= creep.carryCapacity * harvFull && creep.memory.role != 'sup' ) source = altSource;
+            
+            // if ( creep.memory.role == 'harv' ) console.log( creep.name + ' ' + source.name );
+            if ( ( source && source.structureType && source.structureType == 'spawn' ) || ( source && source.memory && source.memory.role == 'storage' ) ) {
+                if ( creep.room.storage && creep.room.storage.owner.username == 'Vision' && creep.room.storage.store.energy < storageLevel ) source = creep.room.storage; else {
         	        var storage = altSource;
-        	        if ( !storage && creep.room.storage && creep.room.storage.owner.username == 'Vision' && creep.room.storage.energy < storageLevel ) storage = creep.room.storage;
+        	        if ( !storage && creep.room.storage && creep.room.storage.owner.username == 'Vision' && creep.room.storage.store.energy < storageLevel ) storage = creep.room.storage;
         	        if ( source.energy == 300 && storage ) source = storage;
                 }
             }
 
-            if ( !source && creep.carry.energy >= creep.carryCapacity * harvFull && creep.memory.role != 'sup' ) source = altSource;
-            
     	    if ( source ) {
     	        if ( source.pos.inRangeTo( creep, 1 ) && creep.memory.role == 'harv' && altSource ) source = altSource;
     	        if ( creep.memory.role == 'harv' && creep.pos.inRangeTo( source, 1 ) && creep.carry.energy > 0 && creep.carry.energy < creep.carryCapacity * harvFull && creep.hits == creep.hitsMax ) m( creep, creep );
