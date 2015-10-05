@@ -1,5 +1,5 @@
 var avail = 0, hostility = 0, cpuR = 0, cpuC = 0, cpuS = 0, roomsexp = 0, loot = null, lootAmount = 0, lootroom = '', notHurt = true, tempStorageLimit = 3000, hostileName = '', hostileRoom = '', topUser = null, topUserAmount = 0, maxHostile = 9999, allDrop = [], harvFull = .75, mapping = 0, totalStored = 0, totalFriends = 0, totEvadeCpu = 0;
-var maxNodes = 3000, allies = [ 'theAEmix', 'Waveofbabies', 'Vertigan' ], storageLevel = 800000;
+var maxNodes = 4000, allies = [ 'theAEmix', 'Waveofbabies', 'Vertigan' ], storageLevel = 800000, minBuild = 25000, skipCpuLevel = 100;
 if ( Game.flags.nosrc ) maxHostile = 4500;
 
 runScreeps();
@@ -313,7 +313,7 @@ function rS() {
                 // Military Creeps
                 for ( var i = 0; i < 16; i++ ) {
                     // Clear a source of energy, cost 15,000 per 1,500s
-                    if ( ( spawner.room.memory.storedEnergy > 75000 ) && ( Game.flags['qm'+i] || Game.flags['oqm'+i] ) && Game.flags['qm'+i+'x'] === undefined ) {  
+                    if ( ( spawner.room.memory.storedEnergy > minBuild ) && ( Game.flags['qm'+i] || Game.flags['oqm'+i] ) && Game.flags['qm'+i+'x'] === undefined ) {  
                         var targetRoom = null;
                         if ( Game.flags['qm'+i] ) targetRoom = Game.flags['qm'+i].room;
                         if ( !targetRoom && Game.flags['oqm'+i] ) targetRoom = Game.flags['oqm'+i].room;
@@ -436,7 +436,7 @@ function rC() {
     	if ( creep.getActiveBodyparts( ATTACK ) || creep.getActiveBodyparts( RANGED_ATTACK ) || creep.getActiveBodyparts( HEAL ) ) creep.memory.mil = true; else creep.memory.mil = false;
     	
     	// Skip bots if necessary to save cpu
-    	if ( !creep.memory.mil && Game.getUsedCpu() > Game.cpuLimit - 100 ) { Memory.skips = Memory.skips + 1; continue; } 
+    	if ( !creep.memory.mil && Game.getUsedCpu() > Game.cpuLimit - skipCpuLevel ) { Memory.skips = Memory.skips + 1; continue; } 
 
         // Skips bots under constructions, report military creeps
     	if ( creep.spawning ) {
@@ -466,6 +466,7 @@ function rC() {
     	// if ( !base ) base = creep.pos.findClosestByRange( FIND_MY_SPAWNS );
     	if ( !base ) base = whatBase( creep );
     	if ( !base ) base = Game.spawns[creep.memory.spawn];
+    	if ( !base ) base = Game.spawns.g;
         var suf = '';
         suf = base.name;
         if ( !creep.memory.spawn && creep.pos.findClosestByRange( FIND_MY_SPAWNS ) ) creep.memory.spawn = creep.pos.findClosestByRange( FIND_MY_SPAWNS ).name;
@@ -889,9 +890,9 @@ function rC() {
             }
 
             if ( source == base || ( source && source.memory && source.memory.role == 'storage' ) ) {
-                if ( creep.room.storage && creep.room.storage.owner.username == 'Vision' ) source = creep.room.storage; else {
+                if ( creep.room.storage && creep.room.storage.owner.username == 'Vision' && creep.room.storage.energy < storageLevel ) source = creep.room.storage; else {
         	        var storage = altSource;
-        	        if ( !storage && creep.room.storage && creep.room.storage.owner.username == 'Vision' ) storage = creep.room.storage;
+        	        if ( !storage && creep.room.storage && creep.room.storage.owner.username == 'Vision' && creep.room.storage.energy < storageLevel ) storage = creep.room.storage;
         	        if ( source.energy == 300 && storage ) source = storage;
                 }
             }
@@ -993,15 +994,16 @@ function rC() {
 
 function whatBase( creep ) {
     if ( creep.carry.energy == 0 ) creep.memory.base = null;
-    var whichBase = null, whichRange = 99999;
+    var whichBase = null, whichRange = 200;
     if ( !creep.memory.base ) {
         for( var spawnername in Game.spawns ) {
             var spawner = Game.spawns[spawnername];
             
             if ( spawner.room.memory.storedEnergy < storageLevel - 50000 ) {
-                var ra = orange( creep, spawner ) + spawner.room.memory.storedEnergy / 5000;
+                var ra = orange( creep, spawner );
                 
                 if ( ra < whichRange ) { whichBase = spawner; whichRange = ra; }
+                if ( ra < 200 && spawner.room.memory.storedEnergy < 200000 && spawner.room.memory.storedEnergy / 10000 < whichRange ) { whichBase = spawner; whichRange = spawner.room.memory.storedEnergy / 10000; }
             }
         }
         if ( whichBase ) creep.memory.base = whichBase.name; else creep.memory.base = null;
