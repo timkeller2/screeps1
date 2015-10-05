@@ -1,5 +1,5 @@
 var avail = 0, hostility = 0, cpuR = 0, cpuC = 0, cpuS = 0, roomsexp = 0, loot = null, lootAmount = 0, lootroom = '', notHurt = true, tempStorageLimit = 3000, hostileName = '', hostileRoom = '', topUser = null, topUserAmount = 0, maxHostile = 9999, allDrop = [], harvFull = .75, mapping = 0, totalStored = 0, totalFriends = 0, totEvadeCpu = 0;
-var maxNodes = 4000, allies = [ 'theAEmix', 'Waveofbabies', 'Vertigan' ], storageLevel = 800000, minBuild = 25000, skipCpuLevel = 100;
+var maxNodes = 4000, allies = [ 'theAEmix', 'Waveofbabies', 'Vertigan' ], storageLevel = 800000, minBuild = 25000, skipCpuLevel = 100, distRange = 150;
 if ( Game.flags.nosrc ) maxHostile = 4500;
 
 runScreeps();
@@ -996,7 +996,7 @@ function rC() {
 
 function whatBase( creep ) {
     if ( creep.carry.energy == 0 ) creep.memory.base = null;
-    var whichBase = null, whichRange = 200;
+    var whichBase = null, whichRange = distRange;
     if ( !creep.memory.base ) {
         for( var spawnername in Game.spawns ) {
             var spawner = Game.spawns[spawnername];
@@ -1005,7 +1005,7 @@ function whatBase( creep ) {
                 var ra = orange( creep, spawner );
                 
                 if ( ra < whichRange ) { whichBase = spawner; whichRange = ra; }
-                if ( ra < 200 && spawner.room.memory.storedEnergy < 200000 && spawner.room.memory.storedEnergy / 10000 < whichRange ) { whichBase = spawner; whichRange = spawner.room.memory.storedEnergy / 10000; }
+                if ( ra < distRange && spawner.room.memory.storedEnergy < 200000 && spawner.room.memory.storedEnergy / 10000 < whichRange ) { whichBase = spawner; whichRange = spawner.room.memory.storedEnergy / 10000; }
             }
         }
         if ( whichBase ) creep.memory.base = whichBase.name; else creep.memory.base = null;
