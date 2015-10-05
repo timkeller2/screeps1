@@ -1,5 +1,5 @@
 var avail = 0, hostility = 0, cpuR = 0, cpuC = 0, cpuS = 0, roomsexp = 0, loot = null, lootAmount = 0, lootroom = '', notHurt = true, tempStorageLimit = 3000, hostileName = '', hostileRoom = '', topUser = null, topUserAmount = 0, maxHostile = 9999, allDrop = [], harvFull = .75, mapping = 0, totalStored = 0, totalFriends = 0, totEvadeCpu = 0;
-var maxNodes = 3000, allies = [ 'theAEmix', 'Waveofbabies', 'Vertigan' ], storageLevel = 500000;
+var maxNodes = 3000, allies = [ 'theAEmix', 'Waveofbabies', 'Vertigan' ], storageLevel = 800000;
 if ( Game.flags.nosrc ) maxHostile = 4500;
 
 runScreeps();
@@ -263,7 +263,7 @@ function rS() {
                     if ( ( Game.flags['wc'+i+suf]  || Game.flags['owc'+i+suf] )  && Game.creeps['wc'+i+suf]  === undefined )  { if ( spawner.createCreep( wc, 'wc'+i+suf, { role: 'sup', noExt: true } ) === 0 ) continue; }
                     
                     if ( ( Game.flags['hw'+i+suf]  || Game.flags['ohw'+i+suf] || ( i < Math.floor( spawner.room.memory.storedEnergy / 2500 ) && i < 1 && sites.length > 0 ) ) && Game.creeps['hw'+i+suf] === undefined ) if ( spawner.createCreep( hw, 'hw'+i+suf, { role: 'sup' } ) === 0 ) continue;
-                    if ( ( Game.flags['hwx'+i]  || Game.flags['ohwx'+i] ) && Game.creeps['hwx'+i] === undefined ) if ( spawner.createCreep( hwx, 'hwx'+i, { role: 'harv' } ) === 0 ) continue;
+                    if ( ( Game.flags['hwx'+i]  || Game.flags['ohwx'+i] ) && Game.creeps['hwx'+i] === undefined ) if ( spawner.createCreep( hwx, 'hwx'+i, { role: 'harv', rally: 'hwx'+i } ) === 0 ) continue;
                     if ( ( Game.flags['rw'+i]  || Game.flags['orw'+i] ) && Game.creeps['rw'+i] === undefined ) if ( spawner.createCreep( rw, 'rw'+i, { role: 'worker' } ) === 0 ) continue;
                     if ( ( Game.flags['wl'+i+suf]  || Game.flags['owl'+i+suf] ) && Game.creeps['wl'+i+suf] === undefined ) if ( spawner.createCreep( w, 'wl'+i+suf, { role: 'worker' } ) === 0 ) continue;
                     if ( ( Game.flags['rm'+i+suf]  || Game.flags['orm'+i+suf] ) && Game.creeps['rm'+i+suf] === undefined ) if ( spawner.createCreep( m, 'rm'+i+suf, { role: 'miner' } ) === 0 ) continue;
@@ -275,16 +275,16 @@ function rS() {
                 }  
             }
             
-            if ( spawner.room.memory.storedEnergy > 10000 || enemies > 0 ) {  
+            if ( spawner.room.memory.storedEnergy > 10000 || enemies.length > 0 ) {  
                 // Minor Siege
                 if ( Game.flags.ms && orange( spawner, Game.flags.ms) < 175 ) {
-                    if ( Game.creeps.msa1 === undefined && spawner.createCreep( a, 'msa1', { rally: 'ms', rx: -3, ry: 0 } ) === 0 ) continue;
-                    if ( Game.creeps.msa2 === undefined && spawner.createCreep( a, 'msa2', { rally: 'ms', rx: -2, ry: 0 } ) === 0 ) continue;
-                    if ( Game.creeps.msa3 === undefined && spawner.createCreep( a, 'msa3', { rally: 'ms', rx: -1, ry: 0 } ) === 0 ) continue;
-                    if ( Game.creeps.msa4 === undefined && spawner.createCreep( a, 'msa4', { rally: 'ms', rx: 0, ry: 0 } ) === 0 ) continue;
-                    if ( Game.creeps.msa5 === undefined && spawner.createCreep( a, 'msa5', { rally: 'ms', rx: 1, ry: 0 } ) === 0 ) continue;
-                    if ( Game.creeps.msa6 === undefined && spawner.createCreep( a, 'msa6', { rally: 'ms', rx: 2, ry: 0 } ) === 0 ) continue;
-                    if ( Game.creeps.msa7 === undefined && spawner.createCreep( a, 'msa7', { rally: 'ms', rx: 3, ry: 0 } ) === 0 ) continue;
+                    if ( Game.creeps.msa1 === undefined && spawner.createCreep( xr, 'msa1', { rally: 'ms', rx: -3, ry: 0 } ) === 0 ) continue;
+                    if ( Game.creeps.msa2 === undefined && spawner.createCreep( xr, 'msa2', { rally: 'ms', rx: -2, ry: 0 } ) === 0 ) continue;
+                    if ( Game.creeps.msa3 === undefined && spawner.createCreep( xr, 'msa3', { rally: 'ms', rx: -1, ry: 0 } ) === 0 ) continue;
+                    if ( Game.creeps.msa4 === undefined && spawner.createCreep( xr, 'msa4', { rally: 'ms', rx: 0, ry: 0 } ) === 0 ) continue;
+                    if ( Game.creeps.msa5 === undefined && spawner.createCreep( xr, 'msa5', { rally: 'ms', rx: 1, ry: 0 } ) === 0 ) continue;
+                    if ( Game.creeps.msa6 === undefined && spawner.createCreep( xr, 'msa6', { rally: 'ms', rx: 2, ry: 0 } ) === 0 ) continue;
+                    if ( Game.creeps.msa7 === undefined && spawner.createCreep( xr, 'msa7', { rally: 'ms', rx: 3, ry: 0 } ) === 0 ) continue;
                     
                     if ( Game.creeps.msh1 === undefined && spawner.createCreep( hx, 'msh1', { rally: 'ms', rx: 0, ry: 1 } ) === 0 ) continue;
                 }
@@ -354,13 +354,13 @@ function rS() {
                     
                     // Light Attack Squad
                     if ( Game.flags['ql'+i] || Game.flags['oql'+i] ) {  
-                        if ( spawner.createCreep( hxl, 'a'+i+'ql0b', { escort: 'a'+i+'ql0', rally: 'ql'+i } ) === 0 ) continue;
-                        if ( spawner.createCreep( axl, 'a'+i+'ql0a', { escort: 'a'+i+'ql0', rally: 'ql'+i } ) === 0 ) continue;
-                        if ( spawner.createCreep( gxl, 'a'+i+'ql0',  { rally: 'ql'+i } ) === 0 ) continue;
+                        if ( Game.creeps['a'+i+'ql0b'] === undefined ) if ( spawner.createCreep( hxl, 'a'+i+'ql0b', { escort: 'a'+i+'ql0', rally: 'ql'+i } ) === 0 ) continue;
+                        if ( Game.creeps['a'+i+'ql0a'] === undefined ) if ( spawner.createCreep( axl, 'a'+i+'ql0a', { escort: 'a'+i+'ql0', rally: 'ql'+i } ) === 0 ) continue;
+                        if ( Game.creeps['a'+i+'ql0'] === undefined ) if ( spawner.createCreep( gxl, 'a'+i+'ql0',  { rally: 'ql'+i } ) === 0 ) continue;
                         if ( Game.creeps['a'+i+'ql0'] && Game.creeps['a'+i+'ql0'].ticksToLive < 450 ) {
-                            if ( spawner.createCreep( hxl, 'a'+i+'ql1b', { escort: 'a'+i+'ql1', rally: 'ql'+i } ) === 0 ) continue;
-                            if ( spawner.createCreep( axl, 'a'+i+'ql1a', { escort: 'a'+i+'ql1', rally: 'ql'+i } ) === 0 ) continue;
-                            if ( spawner.createCreep( gxl, 'a'+i+'ql1', { rally: 'ql'+i } ) === 0 ) continue;
+                            if ( Game.creeps['a'+i+'ql1b'] === undefined ) if ( spawner.createCreep( hxl, 'a'+i+'ql1b', { escort: 'a'+i+'ql1', rally: 'ql'+i } ) === 0 ) continue;
+                            if ( Game.creeps['a'+i+'ql1a'] === undefined ) if ( spawner.createCreep( axl, 'a'+i+'ql1a', { escort: 'a'+i+'ql1', rally: 'ql'+i } ) === 0 ) continue;
+                            if ( Game.creeps['a'+i+'ql1'] === undefined ) if ( spawner.createCreep( gxl, 'a'+i+'ql1', { rally: 'ql'+i } ) === 0 ) continue;
                         }
                     }
                     
@@ -372,20 +372,17 @@ function rS() {
                         if ( spawner.createCreep( x, 'xx'+i+'x4', { rally: 'xx'+i } ) === 0 ) continue;
                     }
                     
-                    if ( ( Game.flags['axh'+i]  || Game.flags['oaxh'+i] ) && Game.creeps['axh'+i]  === undefined )  { if ( spawner.createCreep( axh, 'axh'+i ) === 0 ) continue; }
+                    if ( ( Game.flags['axh'+i]  || Game.flags['oaxh'+i] || i < enemies.length ) && Game.creeps['axh'+i]  === undefined )  { if ( spawner.createCreep( axh, 'axh'+i ) === 0 ) continue; }
                     if ( ( Game.flags['hxh'+i]  || Game.flags['ohxh'+i] ) && Game.creeps['hxh'+i]  === undefined )  { if ( spawner.createCreep( hxh, 'hxh'+i ) === 0 ) continue; }
                     if ( ( Game.flags['x'+i+suf]  || Game.flags['ox'+i+suf] ) && Game.creeps['x'+i+suf]  === undefined )  { if ( spawner.createCreep( x, 'x'+i+suf ) === 0 ) continue; }
                     if ( ( Game.flags['xr'+i+suf]  || Game.flags['oxr'+i+suf] ) && Game.creeps['xr'+i+suf]  === undefined )  { if ( spawner.createCreep( xr, 'xr'+i+suf ) === 0 ) continue; }
                     if ( ( Game.flags['z'+i+suf]  || Game.flags['oz'+i+suf] ) && Game.creeps['z'+i+suf]  === undefined )  { if ( spawner.createCreep( z, 'z'+i+suf ) === 0 ) continue; }
                     if ( ( Game.flags['g'+i+suf]  || Game.flags['og'+i+suf] ) && Game.creeps['g'+i+suf]  === undefined )  { if ( spawner.createCreep( g, 'g'+i+suf, { rally: 'army'+suf } ) === 0 ) continue; }
                     if ( ( Game.flags['h'+i+suf]  || Game.flags['oh'+i+suf] ) && Game.creeps['h'+i+suf]  === undefined )  { if ( spawner.createCreep( h, 'h'+i+suf, { rally: 'army'+suf } ) === 0 ) continue; }
-                    if ( ( Game.flags['a'+i+suf]  || Game.flags['oa'+i+suf] ) && Game.creeps['a'+i+suf]  === undefined )  { if ( spawner.createCreep( a, 'a'+i+suf, { rally: 'army'+suf } ) === 0 ) continue; }
+                    if ( ( Game.flags['a'+i+suf]  || Game.flags['oa'+i+suf] || i < enemies.length ) && Game.creeps['a'+i+suf]  === undefined )  { if ( spawner.createCreep( a, 'a'+i+suf, { rally: 'army'+suf } ) === 0 ) continue; }
                     if ( ( Game.flags['gl'+i+suf]  || Game.flags['ogl'+i+suf] ) && Game.creeps['gl'+i+suf]  === undefined )  { if ( spawner.createCreep( gxl, 'gl'+i+suf, { rally: 'army'+suf } ) === 0 ) continue; }
                     if ( ( Game.flags['hxl'+i+suf]  || Game.flags['ohxl'+i+suf] ) && Game.creeps['hxl'+i+suf]  === undefined )  { if ( spawner.createCreep( hxl, 'hl'+i+suf, { rally: 'army'+suf } ) === 0 ) continue; }
                     if ( ( Game.flags['al'+i+suf]  || Game.flags['oal'+i+suf] ) && Game.creeps['al'+i+suf]  === undefined )  { if ( spawner.createCreep( axl, 'al'+i+suf, { rally: 'army'+suf } ) === 0 ) continue; }
-                    // if ( ( Game.flags['g'+i+suf]  || Game.flags['og'+i+suf] || spawner.memory.military < hostility )  && Game.creeps['g'+i+suf]  === undefined )  { if ( spawner.createCreep( g, 'g'+i+suf, { rally: 'army'+suf } ) === 0 ) continue; }
-                    // if ( ( Game.flags['h'+i+suf]  || Game.flags['oh'+i+suf] || spawner.memory.healers < firepower / 7 - 1 )  && Game.creeps['h'+i+suf]  === undefined )  { if ( spawner.createCreep( h, 'h'+i+suf, { rally: 'army'+suf } ) === 0 ) continue; }
-                    // if ( ( Game.flags['a'+i+suf]  || Game.flags['oa'+i+suf] || spawner.memory.artillery < hostility )  && Game.creeps['a'+i+suf]  === undefined )  { if ( spawner.createCreep( a, 'a'+i+suf, { rally: 'army'+suf } ) === 0 ) continue; }
                     
                     if ( Game.flags['t'+i+suf] && Game.creeps['t'+i+suf] === undefined ) { if ( spawner.createCreep( t, 't'+i+suf ) === 0 ) continue; }
                     if ( Game.flags['b'+i+suf] && Game.creeps['b'+i+suf] === undefined || ( firepower < hostility / 2 && i < 3 && hostility > 5 && i < enemies.length / 2 ) ) { if ( spawner.createCreep( b, 'b'+i+suf ) === 0 ) continue; }
@@ -439,7 +436,7 @@ function rC() {
     	if ( creep.getActiveBodyparts( ATTACK ) || creep.getActiveBodyparts( RANGED_ATTACK ) || creep.getActiveBodyparts( HEAL ) ) creep.memory.mil = true; else creep.memory.mil = false;
     	
     	// Skip bots if necessary to save cpu
-    	if ( !creep.memory.mil && Game.getUsedCpu() > Game.cpuLimit - 75 ) { Memory.skips = Memory.skips + 1; continue; } 
+    	if ( !creep.memory.mil && Game.getUsedCpu() > Game.cpuLimit - 100 ) { Memory.skips = Memory.skips + 1; continue; } 
 
         // Skips bots under constructions, report military creeps
     	if ( creep.spawning ) {
@@ -715,7 +712,7 @@ function rC() {
             var spawner = creep.pos.findClosestByRange( FIND_MY_SPAWNS, { filter: function(object) { return object.energy < 300; } } );
             var heavyBuilder = creep.pos.findClosestByRange( FIND_MY_CREEPS, { filter: function(object) { return ( ( object.memory.role == 'worker' && object.getActiveBodyparts(WORK) > 3 ) || object.memory.role == 'sup' || object.memory.lift ) && object.pos.inRangeTo( creep, 1 ); } } )
     	    var source = creep.pos.findClosestByRange( FIND_DROPPED_ENERGY, { filter: function(object) { return orange( creep, object ) < 2; } } );
-    	    var emptyLink = creep.pos.findClosestByRange( FIND_MY_STRUCTURES, { filter: function(object) { return object.energy == 0 && object.structureType == STRUCTURE_LINK && !object.pos.inRangeTo( creep.room.storage, 1 ); } } );
+    	    var emptyLink = creep.pos.findClosestByRange( FIND_MY_STRUCTURES, { filter: function(object) { return object.energy == 0 && object.structureType == STRUCTURE_LINK && !object.pos.inRangeTo( creep.room.storage, 2 ); } } );
     	    var link = creep.pos.findClosestByRange( FIND_MY_STRUCTURES, { filter: function(object) { return object.structureType == STRUCTURE_LINK && object.pos.inRangeTo( creep, 1 ); } } );
     	    var beamLink = creep.pos.findClosestByRange( FIND_MY_STRUCTURES, { filter: function(object) { return object.structureType == STRUCTURE_LINK && object.pos.inRangeTo( creep, 1 ) && object.cooldown == 0 && object.energy > 0; } } );
     	    var eLink = creep.pos.findClosestByRange( FIND_MY_STRUCTURES, { filter: function(object) { return object.structureType == STRUCTURE_LINK && object.pos.inRangeTo( creep, 1 ) && object.energy < object.energyCapacity && object.pos.inRangeTo( creep.room.storage, 2 ); } } );
@@ -995,13 +992,14 @@ function rC() {
 }
 
 function whatBase( creep ) {
+    if ( creep.carry.energy == 0 ) creep.memory.base = null;
     var whichBase = null, whichRange = 99999;
     if ( !creep.memory.base ) {
         for( var spawnername in Game.spawns ) {
             var spawner = Game.spawns[spawnername];
             
             if ( spawner.room.memory.storedEnergy < storageLevel - 50000 ) {
-                var ra = orange( creep, spawner ) + spawner.room.memory.storedEnergy / 10000;
+                var ra = orange( creep, spawner ) + spawner.room.memory.storedEnergy / 5000;
                 
                 if ( ra < whichRange ) { whichBase = spawner; whichRange = ra; }
             }
