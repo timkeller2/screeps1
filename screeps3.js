@@ -1,5 +1,5 @@
 var avail = 0, hostility = 0, cpuR = 0, cpuC = 0, cpuS = 0, roomsexp = 0, loot = null, lootAmount = 0, lootroom = '', notHurt = true, tempStorageLimit = 3000, hostileName = '', hostileRoom = '', topUser = null, topUserAmount = 0, maxHostile = 9999, allDrop = [], harvFull = .75, mapping = 0, totalStored = 0, totalFriends = 0, totEvadeCpu = 0;
-var maxNodes = 4000, allies = [ 'theAEmix', 'Waveofbabies', 'Vertigan' ], storageLevel = 800000, minBuild = 25000, skipCpuLevel = 100, distRange = 150;
+var maxNodes = 4000, allies = [ 'theAEmix', 'Waveofbabies', 'Vertigan' ], storageLevel = 800000, minBuild = 25000, skipCpuLevel = 100, distRange = 120;
 if ( Game.flags.nosrc ) maxHostile = 4500;
 
 runScreeps();
@@ -340,6 +340,10 @@ function rS() {
                         for ( var ii = 0; ii < i + 1; ii++ ) { if ( Game.creeps['c'+i+'qc'+ii] === undefined ) if ( spawner.createCreep( c, 'c'+i+'qc'+ii, { rally: 'qc'+i, role: 'harv' } ) === 0 ) continue; }
                     }
     
+                    if ( ( Game.flags['t'+i+suf] || Game.flags['ot'+i+suf] ) && Game.flags['t'+i+suf+'x'] === undefined ) {  
+                        for ( var ii = 0; ii < i + 1; ii++ ) { if ( Game.creeps['t'+i+'c'+ii+suf] === undefined ) if ( spawner.createCreep( c, 't'+i+'c'+ii+suf, { rally: 't'+i+suf, role: 'trans' } ) === 0 ) continue; }
+                    }
+    
                     // Attack Squad
                     if ( Game.flags['q'+i] || Game.flags['oq'+i] ) {  
                         if ( Game.creeps['a'+i+'q0b'] === undefined ) if ( spawner.createCreep( ax, 'a'+i+'q0b', { escort: 'a'+i+'q0', rally: 'q'+i } ) === 0 ) continue;
@@ -658,7 +662,7 @@ function rC() {
         }
         
         // Pick up energy if I can and should
-    	if ( creep.carry.energy < creep.carryCapacity && !creep.memory.mil && ( creep.memory.role != 'miner' || creep.memory.accum ) ) {  
+    	if ( creep.carry.energy < creep.carryCapacity && !creep.memory.mil && ( creep.memory.role != 'miner' || creep.memory.accum ) && !( creep.memory.role == 'trans' && Game.flags['o'+creep.memory.rally] && Game.flags['o'+creep.memory.rally].room == creep.room ) ) {  
     	    var source = null;
             var select = -1, want = 0;
             for ( var i = 0; i < creep.room.memory.allEnergy.length; i++ ) {
@@ -670,7 +674,7 @@ function rC() {
     	    if ( creep.memory.role == 'storage' ) source = null;
     	    if ( creep.memory.accum ) source = creep.pos.findClosestByRange( FIND_DROPPED_ENERGY, {  filter: function(object) { return orange( object, creep ) == 1; } } );
     	    
-    	    if ( source && source.pos.inRangeTo( creep, 1) ) creep.pickup( source ); else if ( creep.room.storage && creep.memory.role != 'storage' && !creep.memory.share && creep.memory.role != 'harv' && creep.memory.role && creep.room.storage.pos.inRangeTo( creep, 1 ) && creep.carry.energy < creep.carryCapacity - 30 && ( creep.carryCapacity > Math.random()*200 || !creep.room.memory.noExtNeed ) ) { creep.room.storage.transferEnergy( creep ); }
+    	    if ( source && source.pos.inRangeTo( creep, 1) ) creep.pickup( source ); else if ( creep.room.storage && creep.memory.role != 'storage' && !creep.memory.share && creep.memory.role != 'harv' && ( creep.memory.role != 'trans' || base.room == creep.room ) && creep.memory.role && creep.room.storage.pos.inRangeTo( creep, 1 ) && creep.carry.energy < creep.carryCapacity - 30 && ( creep.carryCapacity > Math.random()*200 || !creep.room.memory.noExtNeed ) ) { creep.room.storage.transferEnergy( creep ); }
             if ( link && creep.memory.role != 'storage' && creep.memory.noExt === undefined && !creep.memory.share && creep.memory.role != 'harv' && creep.memory.role && link.pos.inRangeTo( creep, 1 ) && creep.carry.energy < creep.carryCapacity / 2 ) { link.transferEnergy( creep ); }    	    
     	}
     	
@@ -679,7 +683,7 @@ function rC() {
             var source = creep.pos.findClosestByRange( FIND_STRUCTURES, { filter: function(object) { return object.energyCapacity==50 && object.energy < 50 && object.pos.inRangeTo( creep, 1 ); } } );
 
             if ( !source ) {
-        	    if ( creep.memory.role == 'miner' || creep.memory.role == 'harv' || !creep.memory.role ) { 
+        	    if ( creep.memory.role == 'miner' || creep.memory.role == 'harv' || ( creep.memory.role == 'trans' && Game.flags['o'+creep.memory.rally] && Game.flags['o'+creep.memory.rally].room == creep.room ) || !creep.memory.role ) { 
         	        source = creep.pos.findClosestByRange( FIND_MY_SPAWNS, { filter: function(object) { return object.energy < 300 && object.pos.inRangeTo( creep, 1 ); } } );
         	        if ( !source && creep.room.storage && creep.pos.inRangeTo( creep.room.storage, 1) ) source = creep.room.storage;
         	        if ( !source ) source = creep.pos.findClosestByRange( FIND_MY_CREEPS, { filter: function(object) { return object.memory.role == 'storage' && ( Math.abs(object.memory.storedEnergy) < creep.room.memory.tempStorageLimit || !creep.room.storage ) && object.pos.inRangeTo( creep, 1) && object != creep && !link; } } );
@@ -790,6 +794,7 @@ function rC() {
             if ( creep.memory.rally && Game.flags['o'+creep.memory.rally] && Game.flags[creep.memory.rally+'stage'] && creep.room != Game.flags[creep.memory.rally+'stage'].room && creep.room != Game.flags['o'+creep.memory.rally].room && creep.carry.energy == 0 ) m( creep, Game.flags[creep.memory.rally+'stage'], 1 );
             if ( creep.memory.rally && Game.flags['o'+creep.memory.rally] && ( creep.room != Game.flags['o'+creep.memory.rally].room || ( creep.room == Game.flags['o'+creep.memory.rally].room && ( creep.pos.x == 49 || creep.pos.x == 0 || creep.pos.y == 49 || creep.pos.y == 0 ) ) ) && creep.carry.energy == 0 ) m( creep, Game.flags['o'+creep.memory.rally], 1 );
             if ( creep.memory.noExt && Game.flags['o'+creep.name] && creep.carry.energy > 0 ) m( creep, Game.flags['o'+creep.name], 1 );
+            if ( creep.memory.role == 'trans' && creep.carry.energy < creep.carryCapacity * harvFull ) creep.memory.moveOrder = 0;
         }
         
     	// Miners
@@ -850,6 +855,8 @@ function rC() {
             if ( creep.memory.role == 'harv' && !source && creep.carry.energy >= creep.carryCapacity * harvFull ) creep.memory.returnToBase = true;
             if ( creep.memory.role == 'harv' && source && ( ( creep.carry.energy >= creep.carryCapacity * harvFull && orange( creep, source ) > 1 ) || ( creep.carry.energy == creep.carryCapacity && orange( creep, source ) < 2 ) ) ) creep.memory.returnToBase = true;
             if ( creep.memory.role == 'harv' && creep.memory.returnToBase ) source = altSource;
+            if ( creep.memory.role == 'trans' && creep.carry.energy < creep.carryCapacity * harvFull ) source = Game.spawns[creep.memory.spawn]; 
+            if ( creep.memory.role == 'trans' && creep.carry.energy >= creep.carryCapacity * harvFull && Game.flags['o'+creep.memory.rally] && Game.flags['o'+creep.memory.rally].room == creep.room && creep.room.storage ) source = creep.room.storage; 
 
             if ( ( !source || ( creep.memory.rally === undefined && creep.memory.target === undefined ) || ( source.room == creep.room && creep.memory.role == 'harv' && !( creep.pos.x == 0 || creep.pos.x == 49 || creep.pos.y == 0 || creep.pos.y == 49 ) ) ) && ( creep.carry.energy < creep.carryCapacity * harvFull ) && !creep.memory.returnToBase ) {
                 if ( creep.memory.role == 'sup' ) {
@@ -893,7 +900,7 @@ function rC() {
             if ( !source && creep.carry.energy >= creep.carryCapacity * harvFull && creep.memory.role != 'sup' ) source = altSource;
             
             // if ( creep.memory.role == 'harv' ) console.log( creep.name + ' ' + source.name );
-            if ( ( source && source.structureType && source.structureType == 'spawn' ) || ( source && source.memory && source.memory.role == 'storage' ) ) {
+            if ( ( source && source.structureType && source.structureType == 'spawn' && source.room == creep.room ) || ( source && source.memory && source.memory.role == 'storage' ) ) {
                 if ( creep.room.storage && creep.room.storage.owner.username == 'Vision' && creep.room.storage.store.energy < storageLevel ) source = creep.room.storage; else {
         	        var storage = altSource;
         	        if ( !storage && creep.room.storage && creep.room.storage.owner.username == 'Vision' && creep.room.storage.store.energy < storageLevel ) storage = creep.room.storage;
@@ -1105,9 +1112,9 @@ function m( creep, dest, dodge ) {
         // } 
         var ig = true;
         if ( !creep.memory.gridlock ) creep.memory.gridlock = 0;
-        if ( creep.memory.x3 == creep.pos.x && creep.memory.y3 == creep.pos.y ) creep.memory.gridlock = creep.memory.gridlock + 1;
-        if ( creep.memory.x1 == creep.memory.x3 && creep.memory.y1 == creep.memory.y3 ) creep.memory.gridlock = creep.memory.gridlock + 1; else creep.memory.gridlock = 0;
-        if ( creep.memory.gridlock > 1 + Math.floor( orange( creep, dest ) / 20 ) || creep.memory.er < 2 ) ig = false;
+        // if ( creep.memory.x3 == creep.pos.x && creep.memory.y3 == creep.pos.y && !creep.pos.inRangeTo( dest, 1 ) ) creep.memory.gridlock = creep.memory.gridlock + 1;
+        if ( creep.memory.x1 == creep.memory.x3 && creep.memory.y1 == creep.memory.y3 && !creep.pos.inRangeTo( dest, 1 ) ) creep.memory.gridlock = creep.memory.gridlock + 1; else creep.memory.gridlock = 0;
+        if ( creep.memory.gridlock > 1 + Math.floor( orange( creep, dest ) / 5 ) || creep.memory.er < 2 ) ig = false;
         if ( creep.memory.gridlock > 2 && Math.random() < .4 ) { creep.memory.moveOrder = 1; creep.memory.pathFind = 5; return; }
 
         mov( creep, dest, avo, ig );
