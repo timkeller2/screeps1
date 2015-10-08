@@ -1,5 +1,5 @@
 var avail = 0, hostility = 0, cpuR = 0, cpuC = 0, cpuS = 0, roomsexp = 0, loot = null, lootAmount = 0, lootroom = '', notHurt = true, tempStorageLimit = 3000, hostileName = '', hostileRoom = '', topUser = null, topUserAmount = 0, maxHostile = 9999, allDrop = [], harvFull = .75, mapping = 0, totalStored = 0, totalFriends = 0, totEvadeCpu = 0;
-var maxNodes = 4000, allies = [ 'theAEmix', 'Waveofbabies', 'Vertigan' ], storageLevel = 800000, minBuild = 25000, skipCpuLevel = 100, distRange = 150, mappingRange = 7;
+var maxNodes = 4000, allies = [ 'theAEmix', 'Waveofbabies', 'Vertigan' ], storageLevel = 800000, minBuild = 25000, skipCpuLevel = 300, distRange = 150, mappingRange = 7, bypassCode = false;
 
 runScreeps();
 
@@ -122,7 +122,7 @@ function rS() {
         if ( !stor && spawner.room.storage && spawner.room.storage.pos.inRangeTo( spawner, 1 ) && spawner.energy < 300 ) { spawner.room.storage.transferEnergy( spawner );  }
 	    var link = spawner.pos.findClosestByRange( FIND_MY_STRUCTURES, { filter: function(object) { return object.pos.inRangeTo( spawner, 1 ) && object.structureType == STRUCTURE_LINK; } } );
 	    if ( link && link.energy < 500 ) spawner.room.storage.transferEnergy( link );
-	    var emptyLink = spawner.pos.findClosestByRange( FIND_MY_STRUCTURES, { filter: function(object) { return object.energy == 0 && object.structureType == STRUCTURE_LINK && !object.pos.inRangeTo( spawner.room.storage, 1 ); } } );
+	    var emptyLink = spawner.pos.findClosestByRange( FIND_MY_STRUCTURES, { filter: function(object) { return object.pos.inRangeTo( spawner, 1 ) && object.energy == 0 && object.structureType == STRUCTURE_LINK && !object.pos.inRangeTo( spawner.room.storage, 2 ); } } );
 	    if ( emptyLink && link && link.energy > 0 && link.cooldown == 0 && !spawner.room.memory.linkBeam ) { link.transferEnergy( emptyLink ); spawner.room.memory.linkBeam = true; }
             
 
@@ -277,16 +277,18 @@ function rS() {
             
             if ( spawner.room.memory.storedEnergy > 10000 || enemies.length > 0 ) {  
                 // Minor Siege
-                if ( Game.flags.ms && orange( spawner, Game.flags.ms) < 175 ) {
-                    if ( Game.creeps.msa1 === undefined && spawner.createCreep( xr, 'msa1', { rally: 'ms', rx: -3, ry: 0 } ) === 0 ) continue;
-                    if ( Game.creeps.msa2 === undefined && spawner.createCreep( xr, 'msa2', { rally: 'ms', rx: -2, ry: 0 } ) === 0 ) continue;
-                    if ( Game.creeps.msa3 === undefined && spawner.createCreep( xr, 'msa3', { rally: 'ms', rx: -1, ry: 0 } ) === 0 ) continue;
-                    if ( Game.creeps.msa4 === undefined && spawner.createCreep( xr, 'msa4', { rally: 'ms', rx: 0, ry: 0 } ) === 0 ) continue;
-                    if ( Game.creeps.msa5 === undefined && spawner.createCreep( xr, 'msa5', { rally: 'ms', rx: 1, ry: 0 } ) === 0 ) continue;
-                    if ( Game.creeps.msa6 === undefined && spawner.createCreep( xr, 'msa6', { rally: 'ms', rx: 2, ry: 0 } ) === 0 ) continue;
-                    if ( Game.creeps.msa7 === undefined && spawner.createCreep( xr, 'msa7', { rally: 'ms', rx: 3, ry: 0 } ) === 0 ) continue;
+                if ( Game.flags.ms && orange( spawner, Game.flags.ms) < 250 ) {
+                    if ( Game.creeps.ms1 === undefined && spawner.createCreep( x, 'ms1', { rally: 'ms', rx: 0, ry: 0 } ) === 0 ) continue;
+                    if ( Game.creeps.ms2 === undefined && spawner.createCreep( x, 'ms2', { rally: 'ms', rx: 1,  ry: 0 } ) === 0 ) continue;
+                    if ( Game.creeps.ms3 === undefined && spawner.createCreep( x, 'ms3', { rally: 'ms', rx: 2,  ry: 0 } ) === 0 ) continue;
                     
-                    if ( Game.creeps.msh1 === undefined && spawner.createCreep( hx, 'msh1', { rally: 'ms', rx: 0, ry: 1 } ) === 0 ) continue;
+                    if ( Game.creeps.ms4 === undefined && spawner.createCreep( axh, 'ms4', { rally: 'ms', rx: 0, ry: 1 } ) === 0 ) continue;
+                    if ( Game.creeps.ms5 === undefined && spawner.createCreep( hxh, 'ms5', { rally: 'ms', rx: 1,  ry: 1 } ) === 0 ) continue;
+                    if ( Game.creeps.ms6 === undefined && spawner.createCreep( axh, 'ms6', { rally: 'ms', rx: 2,  ry: 1 } ) === 0 ) continue;
+                    
+                    if ( Game.creeps.ms7 === undefined && spawner.createCreep( xr, 'ms7', { rally: 'ms', rx: 0, ry: 2 } ) === 0 ) continue;
+                    if ( Game.creeps.ms8 === undefined && spawner.createCreep( xr, 'ms7', { rally: 'ms', rx: 1,  ry: 2 } ) === 0 ) continue;
+                    if ( Game.creeps.ms9 === undefined && spawner.createCreep( xr, 'ms7', { rally: 'ms', rx: 2,  ry: 2 } ) === 0 ) continue;
                 }
                      
                 // Siege Squad
@@ -295,11 +297,11 @@ function rS() {
                     if ( Game.creeps.g2 === undefined && spawner.createCreep( x, 'g2', { rally: 'siege', rx: 3, ry: -2 } ) === 0 ) continue;
                     if ( Game.creeps.g3 === undefined && spawner.createCreep( x, 'g3', { rally: 'siege', rx: 4, ry: -2 } ) === 0 ) continue;
                     
-                    if ( Game.creeps.h1 === undefined && spawner.createCreep( hx, 'h1', { rally: 'siege', rx: 1, ry: -1 } ) === 0 ) continue;
-                    if ( Game.creeps.h2 === undefined && spawner.createCreep( hx, 'h2', { rally: 'siege', rx: 2, ry: -1 } ) === 0 ) continue;
-                    if ( Game.creeps.h3 === undefined && spawner.createCreep( hx, 'h3', { rally: 'siege', rx: 3, ry: -1 } ) === 0 ) continue;
-                    if ( Game.creeps.h4 === undefined && spawner.createCreep( hx, 'h4', { rally: 'siege', rx: 4, ry: -1 } ) === 0 ) continue;
-                    if ( Game.creeps.h5 === undefined && spawner.createCreep( hx, 'h5', { rally: 'siege', rx: 5, ry: -1 } ) === 0 ) continue;
+                    if ( Game.creeps.h1 === undefined && spawner.createCreep( axh, 'h1', { rally: 'siege', rx: 1, ry: -1 } ) === 0 ) continue;
+                    if ( Game.creeps.h2 === undefined && spawner.createCreep( axh, 'h2', { rally: 'siege', rx: 2, ry: -1 } ) === 0 ) continue;
+                    if ( Game.creeps.h3 === undefined && spawner.createCreep( hxh, 'h3', { rally: 'siege', rx: 3, ry: -1 } ) === 0 ) continue;
+                    if ( Game.creeps.h4 === undefined && spawner.createCreep( axh, 'h4', { rally: 'siege', rx: 4, ry: -1 } ) === 0 ) continue;
+                    if ( Game.creeps.h5 === undefined && spawner.createCreep( axh, 'h5', { rally: 'siege', rx: 5, ry: -1 } ) === 0 ) continue;
 
                     if ( Game.creeps.r1 === undefined && spawner.createCreep( xr, 'r1', { rally: 'siege', rx: 0, ry: 0 } ) === 0 ) continue;
                     if ( Game.creeps.r2 === undefined && spawner.createCreep( xr, 'r2', { rally: 'siege', rx: 1, ry: 0 } ) === 0 ) continue;
@@ -421,7 +423,7 @@ function rS() {
                     if ( Game.creeps['m'+i+suf+'bu'] === undefined && ( Game.creeps['m'+i+suf] !== undefined && Game.creeps['m'+i+suf].ticksToLive < dist * 1.2 + 40 ) ) if ( spawner.createCreep( whatminer, 'm'+i+suf+'bu', { role: 'miner', accum: 1, rally: 'm'+i+suf } ) === 0 ) continue;
                 }
                 if ( Game.flags['b'+i+suf] && Game.creeps['b'+i+suf] === undefined || ( spawner.memory.spawnLag > 10 && i < 1 && i < spawner.room.controller.level - 3 && spawner.memory.friends > 10 ) ) { if ( spawner.createCreep( b, 'b'+i+suf ) === 0 ) continue; }
-                if ( ( Game.flags['cs'+i+suf] && Game.creeps['cs'+i+suf] === undefined ) || ( i < 0 && i < eex / 10 && spawner.memory.friends > 4 ) ) if ( spawner.createCreep( wc, 'cs'+i+suf, { role: 'sup' } ) === 0 ) continue;
+                if ( ( Game.flags['cs'+i+suf] && Game.creeps['cs'+i+suf] === undefined ) || ( i < 1 && i < eex / 20 && spawner.memory.friends > 4 ) ) if ( spawner.createCreep( wc, 'cs'+i+suf, { role: 'sup' } ) === 0 ) continue;
             }
         } 
     }
@@ -493,7 +495,7 @@ function rC() {
     	var nearestMiner = creep.pos.findClosestByRange( FIND_MY_CREEPS, { filter: function(object) { return object.memory.role == 'miner' && creep != object;  } } );
     	var nearestEnemy = creep.pos.findClosestByRange( FIND_HOSTILE_CREEPS, { filter: function(object) { return object.hitsMax < maxHostile && ( object.getActiveBodyparts( ATTACK ) || object.getActiveBodyparts( RANGED_ATTACK ) ) && allies.indexOf( object.owner.username ) < 0;  } } );
     	var nearestMil = creep.pos.findClosestByRange( FIND_MY_CREEPS, { filter: function(object) { return object.memory.mil && creep.hitsMax > 1000 && creep != object;  } } );
-	    var link = creep.pos.findClosestByRange( FIND_MY_STRUCTURES, { filter: function(object) { return object.pos.inRangeTo( creep, 1 ) && object.structureType == STRUCTURE_LINK; } } );
+	    var link = creep.pos.findClosestByRange( FIND_MY_STRUCTURES, { filter: function(object) { return object.pos.inRangeTo( creep, 1 ) && object.structureType == STRUCTURE_LINK && object.energy > 0; } } );
 	    if ( link ) creep.memory.linked = true; else creep.memory.linked = false;
 
     	if ( nearestSpawner ) creep.memory.spr = range( creep.pos.x, creep.pos.y, nearestSpawner.pos.x, nearestSpawner.pos.y ); else creep.memory.spr = 99;
@@ -513,40 +515,42 @@ function rC() {
     	if ( creep.memory.returnToBase === undefined || creep.carry.energy == 0 ) creep.memory.returnToBase = false;
 
         // Fire if possible
-    	var target = null, creepFiring = false, creepAttacking = false;
+    	var target = null, creepFiring = false, creepAttacking = false, closeRange = false;
         if ( creep.getActiveBodyparts(RANGED_ATTACK) > 0 ) {
             var select = -1, targetNeed = -1, need = 0, target = null;
             for( var i=0; i < hostiles; i++ ) {
                 if ( hos[i].pos.inRangeTo( creep, 3 ) ) {
                     need = hos[i].hitsMax - hos[i].hits + hos[i].getActiveBodyparts( ATTACK ) * 50 + hos[i].getActiveBodyparts( HEAL ) * 100 + hos[i].getActiveBodyparts( RANGED_ATTACK ) * 25;
-                    if ( hos[i].pos.inRangeTo( creep, 1) ) need = need * 5;
+                    if ( hos[i].pos.inRangeTo( creep, 1) ) closeRange = true;
                     if ( need > targetNeed ) { targetNeed = need; select = i; }
                 }
             }
             if ( select > -1 ) target = hos[select];
             
-            if ( !target && creep.pos.findInRange( FIND_HOSTILE_SPAWNS, 3 ).length > 0 ) target = creep.pos.findClosestByRange( FIND_HOSTILE_SPAWNS );
+            if ( !target && creep.pos.findInRange( FIND_HOSTILE_SPAWNS, 3 ).length > 0 ) { target = creep.pos.findClosestByRange( FIND_HOSTILE_SPAWNS ); if ( target.pos.inRangeTo( creep, 1 ) ) closeRange = true; }
 
             // Attack weakest nearby structure
-            if ( !target && creep.pos.findInRange( FIND_MY_SPAWNS, 99 ).length == 0 ) {
+            if ( creep.pos.findInRange( FIND_MY_SPAWNS, 99 ).length == 0 ) {
                 var targets = creep.pos.findInRange( FIND_STRUCTURES, 3, { filter: function(object) { return object.structureType != STRUCTURE_ROAD; } } );
                 var select = -1, targetNeed = 99999999, target = null;
                 
                 for( var i=0; i<targets.length; i++ ) {
+                    if ( targets[i].pos.inRangeTo( creep, 1 ) && targets[i].structureType != STRUCTURE_WALL ) closeRange = true;
                     if ( targets[i].hits && targets[i].hits < targetNeed ) { targetNeed = targets[i].hits; select = i; }
                 }
-                if ( select > -1 ) target = targets[select];
+                if ( !target && select > -1 ) target = targets[select];
             }
             
             // Attack weakest nearby structure
-            if ( !target && creep.pos.findInRange( FIND_MY_SPAWNS, 99 ).length == 0 ) {
+            if ( creep.pos.findInRange( FIND_MY_SPAWNS, 99 ).length == 0 ) {
                 var targets = creep.pos.findInRange( FIND_STRUCTURES, 3, { filter: function(object) { return object.structureType != STRUCTURE_ROAD; } } );
                 var select = -1, targetNeed = 99999999, target = null;
                 
                 for( var i=0; i<targets.length; i++ ) {
+                    if ( targets[i].pos.inRangeTo( creep, 1 ) && targets[i].structureType != STRUCTURE_WALL ) closeRange = true;
                     if ( targets[i].hits && targets[i].hits < targetNeed ) { targetNeed = targets[i].hits; select = i; }
                 }
-                if ( select > -1 ) target = targets[select];
+                if ( !target && select > -1 ) target = targets[select];
             }
             
             if ( target ) {
@@ -554,7 +558,7 @@ function rC() {
                     creep.say( 'ignoring' );
                 } else {
                     creepFiring = true;
-                    if ( target.pos.inRangeTo( creep, 1) && target.structureType === undefined ) creep.rangedMassAttack(); else creep.rangedAttack( target );
+                    if ( closeRange ) creep.rangedMassAttack(); else creep.rangedAttack( target );
                 }
             }
         }
@@ -721,7 +725,7 @@ function rC() {
     	    var source = creep.pos.findClosestByRange( FIND_DROPPED_ENERGY, { filter: function(object) { return orange( creep, object ) < 2; } } );
     	    var emptyLink = creep.pos.findClosestByRange( FIND_MY_STRUCTURES, { filter: function(object) { return object.energy == 0 && object.structureType == STRUCTURE_LINK && !object.pos.inRangeTo( creep.room.storage, 2 ); } } );
     	    var link = creep.pos.findClosestByRange( FIND_MY_STRUCTURES, { filter: function(object) { return object.structureType == STRUCTURE_LINK && object.pos.inRangeTo( creep, 1 ); } } );
-    	    var beamLink = creep.pos.findClosestByRange( FIND_MY_STRUCTURES, { filter: function(object) { return object.structureType == STRUCTURE_LINK && object.pos.inRangeTo( creep, 1 ) && object.cooldown == 0 && object.energy > 0; } } );
+    	    var beamLink = creep.pos.findClosestByRange( FIND_MY_STRUCTURES, { filter: function(object) { return object.structureType == STRUCTURE_LINK && object.pos.inRangeTo( creep, 1 ) && object.cooldown == 0 && object.energy > 0 && object.pos.inRangeTo( creep.room.storage, 2 ); } } );
     	    var eLink = creep.pos.findClosestByRange( FIND_MY_STRUCTURES, { filter: function(object) { return object.structureType == STRUCTURE_LINK && object.pos.inRangeTo( creep, 1 ) && object.energy < object.energyCapacity && object.pos.inRangeTo( creep.room.storage, 2 ); } } );
     	    
             var reserve = 0;
@@ -799,9 +803,11 @@ function rC() {
         }
         
     	// Miners
-    	if ( creep.fatigue == 0 && ( creep.memory.role == 'miner' || ( creep.memory.role == 'harv' && creep.carry.energy == 0 && creep.getActiveBodyparts( WORK ) > 0 ) ) && !creep.memory.accum ) {
+    	if ( creep.fatigue == 0 && !creep.memory.moveOrder && ( creep.memory.role == 'miner' || ( creep.memory.role == 'harv' && creep.carry.energy == 0 && creep.getActiveBodyparts( WORK ) > 0 ) ) && !creep.memory.accum ) {
     	    var source = null;
-    	    if ( creep.getActiveBodyparts( WORK ) < 8 ) source = creep.pos.findClosestByRange( FIND_SOURCES ); else source = creep.pos.findClosestByRange( FIND_SOURCES, { filter: function( object ) { return object.energy > 0 && object.pos.findInRange(FIND_HOSTILE_CREEPS,6).length == 0 && ( orange( object, lair ) > 6 || orange( object, nearestMil ) < 8 ) && orange( object, creep ) < orange( object, nearestMiner ); } } ); 
+    	    if ( creep.getActiveBodyparts( WORK ) < 8 ) source = creep.pos.findClosestByRange( FIND_SOURCES ); else {
+    	        source = creep.pos.findClosestByRange( FIND_SOURCES, { filter: function( object ) { return object.energy > 0 && object.pos.findInRange(FIND_HOSTILE_CREEPS,6).length == 0 && ( orange( object, lair ) > 6 || orange( object, nearestMil ) < 8 ) && orange( object, creep ) < orange( object, nearestMiner ); } } ); 
+    	    }
     	    if ( !source && nearestMil ) source = nearestMil;
     	    if ( !source && creep.memory.rally && Game.flags['o'+creep.memory.rally] ) source = Game.flags['o'+creep.memory.rally];
     	    if ( source && creep.pos.inRangeTo( source, 1) && creep.hits == creep.hitsMax ) m( creep, creep ); else if ( source ) if ( creep.memory.er > 4 ) if ( source != nearestMil || ( source == nearestMil && !source.pos.inRangeTo( creep, 3 ) ) ) m( creep, source ); 
@@ -814,7 +820,7 @@ function rC() {
     	}
     	
     	// Builders
-    	if ( creep.fatigue == 0 && creep.getActiveBodyparts( WORK ) > 0 && creep.getActiveBodyparts( CARRY ) > 0 ) { 
+    	if ( creep.fatigue == 0 && !creep.memory.moveOrder && creep.getActiveBodyparts( WORK ) > 0 && creep.getActiveBodyparts( CARRY ) > 0 ) { 
     	    var source = creep.pos.findClosestByRange( FIND_CONSTRUCTION_SITES );
     	    if ( !source ) source = creep.pos.findClosestByRange( FIND_STRUCTURES, { filter: function(object) { return object.structureType != STRUCTURE_WALL && object.hits < object.hitsMax / 2 && object.hits < rampartlevel / 150; } } );
     	    if ( !source ) source = creep.pos.findClosestByRange( FIND_STRUCTURES, { filter: function(object) { return object.structureType != STRUCTURE_WALL && object.structureType != STRUCTURE_ROAD && object.hits < object.hitsMax && object.hits < rampartlevel / 15; } } );
@@ -891,7 +897,7 @@ function rC() {
 
             if ( creep.memory.noExt !== undefined && creep.room.storage ) if ( creep.carry.energy < creep.carryCapacity && creep.pos.inRangeTo( creep.room.storage, 1 ) ) creep.room.memory.noExtNeed = true;
 
-            if ( nearestSpawner && creep.carry.energy > 0 && creep.memory.noExt === undefined ) {
+            if ( nearestSpawner && creep.carry.energy > 0 && creep.memory.noExt === undefined && creep.memory.role != 'trans' ) {
                 var erange = 8 - creep.room.memory.iGotTheExt * 2;
                 if ( creep.memory.role == 'sup' && !creep.room.memory.iGotTheExt ) erange = 24;
                 var cext = creep.pos.findClosestByRange( FIND_STRUCTURES, { filter: function(object) { return object.energyCapacity==50 && object.energy < 50 && object.pos.inRangeTo( creep, erange ); } } );
@@ -918,7 +924,7 @@ function rC() {
         creep.memory.usedCpu3 = Math.floor( Game.getUsedCpu() - startCpu );
 
         // Healers
-    	if ( creep.fatigue == 0 && creep.getActiveBodyparts( HEAL ) > creep.hitsMax / 300 || ( creep.getActiveBodyparts( HEAL ) > 0 && creep.getActiveBodyparts( RANGED_ATTACK ) == 0 ) ) {  
+    	if ( creep.fatigue == 0 && !creep.memory.moveOrder && creep.getActiveBodyparts( HEAL ) > creep.hitsMax / 300 || ( creep.getActiveBodyparts( HEAL ) > 0 && creep.getActiveBodyparts( RANGED_ATTACK ) == 0 ) ) {  
     	    var safedistance = 3;
             var target = -1, targetNeed = 0, need = 0;
             for ( var i=0;i<inj.length;i++ ) {
@@ -942,7 +948,7 @@ function rC() {
     	}
     	
     	// Melee
-    	if ( creep.fatigue == 0 && creep.getActiveBodyparts( ATTACK ) > 0 ) {
+    	if ( creep.fatigue == 0 && !creep.memory.moveOrder && creep.getActiveBodyparts( ATTACK ) > 0 ) {
     	    var en = creep.pos.findInRange( FIND_HOSTILE_CREEPS, 5 ), es = 0, es2 = 0, myStr = creep.getActiveBodyparts( TOUGH ) / 2 + creep.getActiveBodyparts( ATTACK )+.6;
     	    var ally = creep.pos.findInRange( FIND_MY_CREEPS, 2 );
     	    for(var e=0;e<ally.length;e++) { myStr += ( ally[e].getActiveBodyparts(ATTACK)/5+ally[e].getActiveBodyparts(HEAL)/3 ); }
@@ -967,7 +973,7 @@ function rC() {
     	}
     	
     	// Ranged
-    	if ( creep.fatigue == 0 && creep.getActiveBodyparts( RANGED_ATTACK ) > 0 ) {
+    	if ( creep.fatigue == 0 && !creep.memory.moveOrder && creep.getActiveBodyparts( RANGED_ATTACK ) > 0 ) {
     	    var source = creep.pos.findClosestByRange( hos ); 
     	    if ( !source || orange( creep, source ) > orange( creep, attlair ) ) source = attlair;
     	    if ( source && creep.hits > creep.hitsMax * .6 ) {
@@ -1079,8 +1085,11 @@ function evade( creep, enemy ) {
     if ( !collision( creep, tx, ty ) && !creep.pos.inRangeTo( enemy, mappingRange ) ) {
         emov( creep, quickMove );
     } else {
-        // if ( !creep.memory.mil ) bypass( creep, quickMove ); else if ( Game.getUsedCpu() < Game.cpuLimit - 50 ) creep.moveTo( creep.room.getPositionAt( tx, ty ), { avoid: avo, reusePath: 0 } ); else console.log( creep.name + ' aborting move for cpu...' );
-        if ( Game.getUsedCpu() < Game.cpuLimit - 50 ) creep.moveTo( creep.room.getPositionAt( tx, ty ), { avoid: avo, reusePath: 5, maxOps: maxNodes } ); else console.log( creep.name + ' aborting move for cpu...' );
+        if ( bypassCode && creep.pos.x > 2 && creep.pos.x < 47 && creep.pos.y > 2 && creep.pos.y < 47 ) {
+            if ( !creep.memory.mil ) bypass( creep, quickMove ); else creep.moveTo( creep.room.getPositionAt( tx, ty ), { avoid: avo, reusePath: 0 } );
+        } else {
+            creep.moveTo( creep.room.getPositionAt( tx, ty ), { avoid: avo, reusePath: 5, maxOps: maxNodes } ); 
+        }
     }
     cpuE = Game.getUsedCpu() - cpuE;
     totEvadeCpu += cpuE;
@@ -1115,7 +1124,7 @@ function m( creep, dest, dodge ) {
         if ( !creep.memory.gridlock ) creep.memory.gridlock = 0;
         // if ( creep.memory.x3 == creep.pos.x && creep.memory.y3 == creep.pos.y && !creep.pos.inRangeTo( dest, 1 ) ) creep.memory.gridlock = creep.memory.gridlock + 1;
         if ( creep.memory.x1 == creep.memory.x3 && creep.memory.y1 == creep.memory.y3 && !creep.pos.inRangeTo( dest, 1 ) ) creep.memory.gridlock = creep.memory.gridlock + 1; else creep.memory.gridlock = 0;
-        if ( creep.memory.gridlock > 2 || creep.memory.er < 2 || ( creep.memory.mil && creep.memory.gridlock > 0 ) ) ig = false;
+        if ( creep.memory.gridlock > 3 || creep.memory.er < 2 || ( creep.memory.mil && creep.memory.gridlock > 0 ) ) ig = false;
         if ( creep.memory.gridlock > 2 && Math.random() < .4 ) { creep.memory.moveOrder = 1; creep.memory.pathFind = 5; return; }
 
         mov( creep, dest, avo, ig );
@@ -1147,24 +1156,23 @@ function mov( creep, dest, avo, ig ) {
     if ( !creep.memory.ry ) creep.memory.ry = 0;
     if ( creep.memory.rally && dest && dest.room == creep.room && ( ( dest.name && creep.memory.rally == dest.name ) && ( dest.pos.x || dest.pos.y ) && ( creep.memory.rx || creep.memory.ry ) ) ) {
         creep.memory.lastMove = creep.memory.lastMove + ' using rally code...  avo: ' + avo.length;
-        if ( Game.getUsedCpu() < Game.cpuLimit - 50 ) creep.moveTo( dest.pos.x + creep.memory.rx, dest.pos.y + creep.memory.ry, { avoid: avo, reusePath: ru, ignoreCreeps: ig, maxOps: maxNodes } ); else console.log( creep.name + ' aborting move for cpu...' );
+        if ( Game.getUsedCpu() < Game.cpuLimit - 50 ) creep.moveTo( dest.pos.x + creep.memory.rx, dest.pos.y + creep.memory.ry, { avoid: avo, reusePath: ru, ignoreCreeps: false, maxOps: maxNodes } ); else console.log( creep.name + ' aborting move for cpu...' );
     }
     else {
         var aRoom = creep.room;
         if ( dest && dest.room !== undefined ) aRoom = dest.room;
         if ( Game.flags.opt && ig && dest && dest.pos && dest.pos.x && dest.pos.y && aRoom.name !== undefined && !creep.pos.inRangeTo( dest, mappingRange ) ) emov( creep, dest ); else {
-            creep.memory.lastMove = creep.memory.lastMove + ' using bypass code...  avo: ' + avo.length + '  Ig: ' + ig + '  dRange: ' + orange( creep, dest );
-
-            // if ( !creep.memory.mil && orange( creep, dest ) < 5 ) {
-            //     bypass( creep, dest );
-            // } else {
-                if ( Game.getUsedCpu() < Game.cpuLimit - 50 ) creep.moveTo( dest, { avoid: avo, reusePath: ru, ignoreCreeps: ig, maxOps: maxNodes } ); else console.log( creep.name + ' aborting move for cpu...' );
-            // }
-            
-            // console.log( creep.name + ' bypassing... cost ' + ( Game.getUsedCpu() - timeMove ) + ' ' + ig );
+            if ( !creep.memory.mil && orange( creep, dest ) < 40 && bypassCode && creep.pos.x > 2 && creep.pos.x < 47 && creep.pos.y > 2 && creep.pos.y < 47 ) {
+                creep.memory.lastMove = creep.memory.lastMove + ' using bypass code...  avo: ' + avo.length + '  Ig: ' + ig + '  dRange: ' + orange( creep, dest );
+                bypass( creep, dest );
+            } else {
+                var tryQuick = reroute( creep, dest );
+                if ( tryQuick != null ) creep.moveTo( tryQuick, { avoid: avo, reusePath: ru, ignoreCreeps: ig, maxOps: 1000 } ); else 
+                    creep.moveTo( dest, { avoid: avo, reusePath: ru, ignoreCreeps: ig, maxOps: maxNodes } ); 
+            }
         }
     }
-    creep.memory.lastMove = creep.memory.lastMove + ' MoveTime: ' + ( Game.getUsedCpu() - timeMove );
+    creep.memory.lastMove = creep.memory.lastMove + ' MoveTime: ' + ( Math.floor( Game.getUsedCpu() - timeMove ) );
 } 
 
 function getDestTag( creep, dest ) {
@@ -1200,12 +1208,20 @@ function emov( creep, dest ) {
 
 function reroute( creep, dest ) {
     var destTag = getDestTag( creep, dest );
-    var curTag = String.fromCharCode( creep.pos.x+48, creep.pos.y+48 );
     var lx = creep.pos.x, ly = creep.pos.y;
     for ( var i = 0; i < 7; i++ ) {
         if ( i == 0 || creep.room.lookForAt( 'creep', lx, ly ).length > 0 ) {
-            if ( creep.room.memory.ePath[curTag] != undefined && creep.room.memory.ePath[curTag][destTag] != undefined ) {
-                
+            var curTag = String.fromCharCode( lx+48, ly+48 );
+            if ( creep.room.memory.ePath !== undefined && creep.room.memory.ePath[curTag] !== undefined && creep.room.memory.ePath[curTag][destTag] !== undefined ) {
+                var dir = creep.room.memory.ePath[curTag][destTag];
+                if ( dir == 1 ) { ly -= 1; }
+                if ( dir == 2 ) { lx += 1; ly -= 1; }
+                if ( dir == 3 ) { lx += 1; }
+                if ( dir == 4 ) { lx += 1; ly += 1; }
+                if ( dir == 5 ) { ly += 1; }
+                if ( dir == 6 ) { lx -= 1; ly += 1; }
+                if ( dir == 7 ) { lx -= 1; }
+                if ( dir == 8 ) { lx -= 1; ly -= 1; }
             } else break;
         } else return creep.room.getPositionAt( lx, ly );
     }
@@ -1215,31 +1231,25 @@ function reroute( creep, dest ) {
 function bypass( creep, dest ) {
     var xMin = creep.pos.x - 1, xMax = creep.pos.x + 1, yMin = creep.pos.y - 1, yMax = creep.pos.y + 1, favX = creep.pos.x, favY = creep.pos.y, fav = -90, likeThis = 0;
     
-    // if ( creep.pos.x < dest.pos.x ) xMin = creep.pos.x;
-    // if ( creep.pos.x > dest.pos.x ) xMax = creep.pos.x;
-    // if ( creep.pos.y < dest.pos.y ) yMin = creep.pos.y;
-    // if ( creep.pos.y > dest.pos.y ) yMax = creep.pos.y;
-    
     for ( var tx = xMin; tx < xMax + 1; tx++ ) {
         for ( var ty = yMin; ty < yMax + 1; ty++ ) {
             if ( tx > -1 && tx < 50 && ty > -1 && ty < 50 && !( tx == creep.pos.x && ty == creep.pos.y ) ) {
                 var lk = creep.room.lookAt( tx, ty ), likeThis = 0, isCreep = false;
                 for ( var i = 0; i < lk.length; i++ ) {
-                    if ( lk[i].type == 'structure' && lk[i].structure.structureType == STRUCTURE_ROAD ) likeThis = 1; else if ( lk[i].type == 'terrain' && lk[i].terrain == 'swamp' ) likeThis = -2;
+                    if ( lk[i].type == 'structure' && lk[i].structure.structureType == STRUCTURE_ROAD ) likeThis += 1; else if ( lk[i].type == 'terrain' && lk[i].terrain == 'swamp' ) likeThis -= 4;
                     if ( lk[i].type == 'creep' && !creep.memory.mil ) isCreep = true;
-                    if ( lk[i].type == 'structure' && lk[i].structure.structureType != STRUCTURE_ROAD && lk[i].structure.structureType != STRUCTURE_RAMPART ) likeThis = -99;
-                    if ( lk[i].type == 'terrain' && lk[i].terrain == 'wall' ) likeThis = -99;
+                    if ( lk[i].type == 'structure' && lk[i].structure.structureType != STRUCTURE_ROAD && lk[i].structure.structureType != STRUCTURE_RAMPART ) likeThis = -999;
+                    if ( lk[i].type == 'terrain' && lk[i].terrain == 'wall' ) likeThis = -999;
                     if ( range( creep.pos.x, creep.pos.y, dest.pos.x, dest.pos.y ) > range( tx, ty, dest.pos.x, dest.pos.y ) ) likeThis += 5;
                     if ( range( creep.pos.x, creep.pos.y, dest.pos.x, dest.pos.y ) < range( tx, ty, dest.pos.x, dest.pos.y ) ) likeThis -= 5;
+                    if ( tx == creep.memory.x1 && ty == creep.memory.y1 ) likeThis -= 10;
                 }
                 if ( isCreep ) likeThis -= 50;
                 if ( likeThis > fav ) { fav = likeThis; favX = tx; favY = ty; }
             }
         }
     }
-    if ( fav > -90 ) creep.move( creep.pos.getDirectionTo( favX, favY ) );
-    // creep.say( fav + ' ' + favX + ' ' + favY );
-    if ( creep.gridlock > 4 ) console.log( creep.name + ' '  + creep.pos.x + ',' + creep.pos.y + ' to ' + dest.pos.x + ',' + dest.pos.y + '  ' + fav );
+    if ( fav > -90 ) { creep.move( creep.pos.getDirectionTo( favX, favY ) ); }
 }
 
 function collision( creep, tx, ty ) {
