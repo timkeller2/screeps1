@@ -1,6 +1,5 @@
 var avail = 0, hostility = 0, cpuR = 0, cpuC = 0, cpuS = 0, roomsexp = 0, loot = null, lootAmount = 0, lootroom = '', notHurt = true, tempStorageLimit = 3000, hostileName = '', hostileRoom = '', topUser = null, topUserAmount = 0, maxHostile = 9999, allDrop = [], harvFull = .75, mapping = 0, totalStored = 0, totalFriends = 0, totEvadeCpu = 0;
-var maxNodes = 4000, allies = [ 'theAEmix', 'Waveofbabies', 'Vertigan' ], storageLevel = 800000, minBuild = 25000, skipCpuLevel = 100, distRange = 120;
-if ( Game.flags.nosrc ) maxHostile = 4500;
+var maxNodes = 4000, allies = [ 'theAEmix', 'Waveofbabies', 'Vertigan' ], storageLevel = 800000, minBuild = 25000, skipCpuLevel = 100, distRange = 150, mappingRange = 7;
 
 runScreeps();
 
@@ -181,6 +180,7 @@ function rS() {
             var s = [];  addPart(s,CARRY,5); addPart(s,MOVE,1); if ( eex > 4 ) addPart(s,CARRY,5); if ( eex > 9 ) addPart(s,CARRY,5); if ( eex > 14 ) addPart(s,CARRY,5);
             var o = [MOVE,CARRY];
             var l = [MOVE,CARRY,CARRY];
+            var lw = [CARRY,WORK,MOVE];
     
             // Elite Military, Keeper Hunters
             var gx = []; addPart(gx,CARRY,6); addPart(gx,MOVE,12); addPart(gx,ATTACK,12); 
@@ -256,13 +256,13 @@ function rS() {
                     }
                     
                     // Roving Haulers
-                    if ( avail > 30000 + i * 30000 && Game.creeps['c'+i] === undefined ) { if ( spawner.createCreep( c, 'c'+i, { role: 'harv' } ) === 0 ) continue; }
+                    // if ( avail > 30000 + i * 30000 && Game.creeps['c'+i] === undefined ) { if ( spawner.createCreep( c, 'c'+i, { role: 'harv' } ) === 0 ) continue; }
                     
                     if ( ( Game.flags['c'+i+suf]   || Game.flags['oc'+i+suf] )   && Game.creeps['c'+i+suf] === undefined ) { if ( spawner.createCreep( c, 'c'+i+suf, { role: 'harv' } ) === 0 ) continue; }
                     if ( ( Game.flags['cs'+i+suf]  || Game.flags['ocs'+i+suf] )  && Game.creeps['cs'+i+suf]  === undefined )  { if ( spawner.createCreep( c, 'cs'+i+suf, { role: 'sup' } ) === 0 ) continue; }
                     if ( ( Game.flags['wc'+i+suf]  || Game.flags['owc'+i+suf] )  && Game.creeps['wc'+i+suf]  === undefined )  { if ( spawner.createCreep( wc, 'wc'+i+suf, { role: 'sup', noExt: true } ) === 0 ) continue; }
                     
-                    if ( ( Game.flags['hw'+i+suf]  || Game.flags['ohw'+i+suf] || ( i < Math.floor( spawner.room.memory.storedEnergy / 2500 ) && i < 1 && sites.length > 0 ) ) && Game.creeps['hw'+i+suf] === undefined ) if ( spawner.createCreep( hw, 'hw'+i+suf, { role: 'sup' } ) === 0 ) continue;
+                    if ( ( Game.flags['hw'+i+suf]  || Game.flags['ohw'+i+suf] || ( i < Math.floor( spawner.room.memory.storedEnergy / 2500 ) && i < 1 && sites.length > 7 ) ) && Game.creeps['hw'+i+suf] === undefined ) if ( spawner.createCreep( hw, 'hw'+i+suf, { role: 'sup' } ) === 0 ) continue;
                     if ( ( Game.flags['hwx'+i]  || Game.flags['ohwx'+i] ) && Game.creeps['hwx'+i] === undefined ) if ( spawner.createCreep( hwx, 'hwx'+i, { role: 'harv', rally: 'hwx'+i } ) === 0 ) continue;
                     if ( ( Game.flags['rw'+i]  || Game.flags['orw'+i] ) && Game.creeps['rw'+i] === undefined ) if ( spawner.createCreep( rw, 'rw'+i, { role: 'worker' } ) === 0 ) continue;
                     if ( ( Game.flags['wl'+i+suf]  || Game.flags['owl'+i+suf] ) && Game.creeps['wl'+i+suf] === undefined ) if ( spawner.createCreep( w, 'wl'+i+suf, { role: 'worker' } ) === 0 ) continue;
@@ -346,13 +346,13 @@ function rS() {
     
                     // Attack Squad
                     if ( Game.flags['q'+i] || Game.flags['oq'+i] ) {  
-                        if ( Game.creeps['a'+i+'q0b'] === undefined ) if ( spawner.createCreep( ax, 'a'+i+'q0b', { escort: 'a'+i+'q0', rally: 'q'+i } ) === 0 ) continue;
-                        if ( Game.creeps['a'+i+'q0a'] === undefined ) if ( spawner.createCreep( ax, 'a'+i+'q0a', { escort: 'a'+i+'q0', rally: 'q'+i } ) === 0 ) continue;
-                        if ( Game.creeps['a'+i+'q0'] === undefined ) if ( spawner.createCreep( ax, 'a'+i+'q0',  { rally: 'q'+i } ) === 0 ) continue;
+                        if ( Game.creeps['a'+i+'q0b'] === undefined ) if ( spawner.createCreep( axh, 'a'+i+'q0b', { escort: 'a'+i+'q0', rally: 'q'+i } ) === 0 ) continue;
+                        if ( Game.creeps['a'+i+'q0a'] === undefined ) if ( spawner.createCreep( axh, 'a'+i+'q0a', { escort: 'a'+i+'q0', rally: 'q'+i } ) === 0 ) continue;
+                        if ( Game.creeps['a'+i+'q0'] === undefined ) if ( spawner.createCreep( axh, 'a'+i+'q0',  { rally: 'q'+i } ) === 0 ) continue;
                         if ( Game.creeps['a'+i+'q0'] && Game.creeps['a'+i+'q0'].ticksToLive < 450 ) {
-                            if ( Game.creeps['a'+i+'q1b'] === undefined ) if ( spawner.createCreep( ax, 'a'+i+'q1b', { escort: 'a'+i+'q1', rally: 'q'+i } ) === 0 ) continue;
-                            if ( Game.creeps['a'+i+'q1a'] === undefined ) if ( spawner.createCreep( ax, 'a'+i+'q1a', { escort: 'a'+i+'q1', rally: 'q'+i } ) === 0 ) continue;
-                            if ( Game.creeps['a'+i+'q1'] === undefined ) if ( spawner.createCreep( ax, 'a'+i+'q1', { rally: 'q'+i } ) === 0 ) continue;
+                            if ( Game.creeps['a'+i+'q1b'] === undefined ) if ( spawner.createCreep( axh, 'a'+i+'q1b', { escort: 'a'+i+'q1', rally: 'q'+i } ) === 0 ) continue;
+                            if ( Game.creeps['a'+i+'q1a'] === undefined ) if ( spawner.createCreep( axh, 'a'+i+'q1a', { escort: 'a'+i+'q1', rally: 'q'+i } ) === 0 ) continue;
+                            if ( Game.creeps['a'+i+'q1'] === undefined ) if ( spawner.createCreep( axh, 'a'+i+'q1', { rally: 'q'+i } ) === 0 ) continue;
                         }
                     }
                     
@@ -378,7 +378,7 @@ function rS() {
                     
                     if ( ( Game.flags['axh'+i]  || Game.flags['oaxh'+i] || i < enemies.length ) && Game.creeps['axh'+i]  === undefined )  { if ( spawner.createCreep( axh, 'axh'+i ) === 0 ) continue; }
                     if ( ( Game.flags['hxh'+i]  || Game.flags['ohxh'+i] ) && Game.creeps['hxh'+i]  === undefined )  { if ( spawner.createCreep( hxh, 'hxh'+i ) === 0 ) continue; }
-                    if ( ( Game.flags['x'+i+suf]  || Game.flags['ox'+i+suf] ) && Game.creeps['x'+i+suf]  === undefined )  { if ( spawner.createCreep( x, 'x'+i+suf ) === 0 ) continue; }
+                    if ( ( Game.flags['x'+i]  || Game.flags['ox'+i] ) && Game.creeps['x'+i]  === undefined )  { if ( spawner.createCreep( x, 'x'+i ) === 0 ) continue; }
                     if ( ( Game.flags['xr'+i+suf]  || Game.flags['oxr'+i+suf] ) && Game.creeps['xr'+i+suf]  === undefined )  { if ( spawner.createCreep( xr, 'xr'+i+suf ) === 0 ) continue; }
                     if ( ( Game.flags['z'+i+suf]  || Game.flags['oz'+i+suf] ) && Game.creeps['z'+i+suf]  === undefined )  { if ( spawner.createCreep( z, 'z'+i+suf ) === 0 ) continue; }
                     if ( ( Game.flags['g'+i+suf]  || Game.flags['og'+i+suf] ) && Game.creeps['g'+i+suf]  === undefined )  { if ( spawner.createCreep( g, 'g'+i+suf, { rally: 'army'+suf } ) === 0 ) continue; }
@@ -407,6 +407,7 @@ function rS() {
             if ( ( Game.flags['hw'+suf] && Game.creeps['hw'+suf] === undefined ) || spawner.memory.friends > 10 || sites.length > 0 ) if ( spawner.createCreep( hw, 'hw'+suf, { role: hwrole } ) === 0 ) continue;
             for ( var i = 0; i < 12; i++ ) {
                 if ( ( Game.flags['w'+i+suf]  || Game.flags['ow'+i+suf] ) ) if ( spawner.createCreep( w, 'w'+i+suf, { role: 'worker' } ) === 0 ) continue;
+                if ( Game.flags['lw'+i+suf]  || Game.flags['olw'+i+suf] ) if ( spawner.createCreep( lw, 'lw'+i+suf, { role: 'worker' } ) === 0 ) continue;
                 if (   Game.flags['s'+i+suf] && Game.creeps['s'+i+suf] === undefined ) if ( spawner.createCreep( s, 's'+i+suf, { role: 'storage' } ) === 0 ) continue;
                 if ( ( Game.flags['m'+i+suf] ) && enemies.length == 0 ) {
                     // console.log( spawner.name + ' ' + 'm'+i+suf);
@@ -420,7 +421,7 @@ function rS() {
                     if ( Game.creeps['m'+i+suf+'bu'] === undefined && ( Game.creeps['m'+i+suf] !== undefined && Game.creeps['m'+i+suf].ticksToLive < dist * 1.2 + 40 ) ) if ( spawner.createCreep( whatminer, 'm'+i+suf+'bu', { role: 'miner', accum: 1, rally: 'm'+i+suf } ) === 0 ) continue;
                 }
                 if ( Game.flags['b'+i+suf] && Game.creeps['b'+i+suf] === undefined || ( spawner.memory.spawnLag > 10 && i < 1 && i < spawner.room.controller.level - 3 && spawner.memory.friends > 10 ) ) { if ( spawner.createCreep( b, 'b'+i+suf ) === 0 ) continue; }
-                if ( ( Game.flags['cs'+i+suf] && Game.creeps['cs'+i+suf] === undefined ) || ( i < 1 && i < eex / 10 && spawner.memory.friends > 4 ) ) if ( spawner.createCreep( wc, 'cs'+i+suf, { role: 'sup' } ) === 0 ) continue;
+                if ( ( Game.flags['cs'+i+suf] && Game.creeps['cs'+i+suf] === undefined ) || ( i < 0 && i < eex / 10 && spawner.memory.friends > 4 ) ) if ( spawner.createCreep( wc, 'cs'+i+suf, { role: 'sup' } ) === 0 ) continue;
             }
         } 
     }
@@ -448,7 +449,7 @@ function rC() {
     	    continue;
     	}
     	
-    	if ( creep.name.substring(0,1) == 'l' && creep.carry.energy == 0 ) creep.suicide();
+    	if ( creep.name.substring(0,1) == 'l' && creep.memory.lift && creep.carry.energy == 0 ) creep.suicide();
     	if ( Game.flags.kill && creep.pos.inRangeTo( Game.flags.kill, 0 ) ) creep.suicide();
 
         if ( ( creep.pos.x == 49 || creep.pos.x == 0 || creep.pos.y == 49 || creep.pos.y == 0 ) && creep.pos.findInRange( FIND_MY_CREEPS, 1 ).length > 1 ) {
@@ -787,7 +788,7 @@ function rC() {
             var evasion = 4;
             if ( creep.hits < creep.hitsMax ) evasion = 5;
             if ( Game.flags[creep.room.name] !== undefined ) evasion = 2;
-            if ( ( !creep.memory.mil || creep.hits < creep.hitsMax * .6 ) && creep.memory.er < evasion ) { evade( creep, nearestEnemy ); }
+            if ( ( !creep.memory.mil || creep.hits < creep.hitsMax * .6 ) && creep.memory.er < evasion ) { if ( creep.memory.er == 4 && ( creep.memory.gridlock > 0 || nearestEnemy.hitsMax > 4500 ) ) { m( creep, creep ); creep.memory.gridlock = 0; } else evade( creep, nearestEnemy ); }
             if ( creep.memory.rally && Game.flags[creep.memory.rally] && Game.flags[creep.memory.rally+'stage'] && creep.room != Game.flags[creep.memory.rally+'stage'].room && creep.room != Game.flags[creep.memory.rally].room && creep.carry.energy == 0 ) m( creep, Game.flags[creep.memory.rally+'stage'], 1 );
             if ( creep.memory.rally && Game.flags[creep.memory.rally] && Game.flags[creep.memory.rally].pos != creep.pos ) { m( creep, Game.flags[creep.memory.rally], 1 ); if ( creep.pos.inRangeTo( Game.flags[creep.memory.rally], 0 ) ) Game.flags[creep.memory.rally].memory.dist = creep.memory.dist; }
             if ( creep.memory.escort && Game.creeps[creep.memory.escort] !== undefined && creep.room == Game.creeps[creep.memory.escort].room && creep.memory.er > 7 && !creep.pos.inRangeTo( Game.creeps[creep.memory.escort], 2 ) ) { m( creep, Game.creeps[creep.memory.escort], 1 ); }
@@ -909,7 +910,7 @@ function rC() {
             }
 
     	    if ( source ) {
-    	        if ( source.pos.inRangeTo( creep, 1 ) && creep.memory.role == 'harv' && altSource ) source = altSource;
+    	        if ( source.pos.inRangeTo( creep, 1 ) && creep.memory.role == 'harv' && altSource ) { source = altSource; creep.memory.gridlock = 0; }
     	        if ( creep.memory.role == 'harv' && creep.pos.inRangeTo( source, 1 ) && creep.carry.energy > 0 && creep.carry.energy < creep.carryCapacity * harvFull && creep.hits == creep.hitsMax ) m( creep, creep );
         	    if ( ( creep.memory.er > 4 || Game.flags[creep.room.name] !== undefined ) && ( creep.hits == creep.hitsMax || creep.room.find( FIND_MY_CREEPS, { filter: function( object ) { return object.getActiveBodyparts( HEAL ) > object.hitsMax / 700; } } ).length == 0 ) ) m( creep, source ); 
     	    }
@@ -1075,7 +1076,7 @@ function evade( creep, enemy ) {
     var quickMove = {};
     quickMove.pos = creep.room.getPositionAt( tx, ty );
 
-    if ( !collision( creep, tx, ty ) && !creep.pos.inRangeTo( enemy, 6 ) ) {
+    if ( !collision( creep, tx, ty ) && !creep.pos.inRangeTo( enemy, mappingRange ) ) {
         emov( creep, quickMove );
     } else {
         // if ( !creep.memory.mil ) bypass( creep, quickMove ); else if ( Game.getUsedCpu() < Game.cpuLimit - 50 ) creep.moveTo( creep.room.getPositionAt( tx, ty ), { avoid: avo, reusePath: 0 } ); else console.log( creep.name + ' aborting move for cpu...' );
@@ -1114,7 +1115,7 @@ function m( creep, dest, dodge ) {
         if ( !creep.memory.gridlock ) creep.memory.gridlock = 0;
         // if ( creep.memory.x3 == creep.pos.x && creep.memory.y3 == creep.pos.y && !creep.pos.inRangeTo( dest, 1 ) ) creep.memory.gridlock = creep.memory.gridlock + 1;
         if ( creep.memory.x1 == creep.memory.x3 && creep.memory.y1 == creep.memory.y3 && !creep.pos.inRangeTo( dest, 1 ) ) creep.memory.gridlock = creep.memory.gridlock + 1; else creep.memory.gridlock = 0;
-        if ( creep.memory.gridlock > 1 + Math.floor( orange( creep, dest ) / 5 ) || creep.memory.er < 2 ) ig = false;
+        if ( creep.memory.gridlock > 2 || creep.memory.er < 2 || ( creep.memory.mil && creep.memory.gridlock > 0 ) ) ig = false;
         if ( creep.memory.gridlock > 2 && Math.random() < .4 ) { creep.memory.moveOrder = 1; creep.memory.pathFind = 5; return; }
 
         mov( creep, dest, avo, ig );
@@ -1151,7 +1152,7 @@ function mov( creep, dest, avo, ig ) {
     else {
         var aRoom = creep.room;
         if ( dest && dest.room !== undefined ) aRoom = dest.room;
-        if ( Game.flags.opt && ig && dest && dest.pos && dest.pos.x && dest.pos.y && aRoom.name !== undefined && !creep.pos.inRangeTo( dest, 6 ) ) emov( creep, dest ); else {
+        if ( Game.flags.opt && ig && dest && dest.pos && dest.pos.x && dest.pos.y && aRoom.name !== undefined && !creep.pos.inRangeTo( dest, mappingRange ) ) emov( creep, dest ); else {
             creep.memory.lastMove = creep.memory.lastMove + ' using bypass code...  avo: ' + avo.length + '  Ig: ' + ig + '  dRange: ' + orange( creep, dest );
 
             // if ( !creep.memory.mil && orange( creep, dest ) < 5 ) {
@@ -1166,15 +1167,20 @@ function mov( creep, dest, avo, ig ) {
     creep.memory.lastMove = creep.memory.lastMove + ' MoveTime: ' + ( Game.getUsedCpu() - timeMove );
 } 
 
-function emov( creep, dest ) {
-    if ( creep.room.memory.epath === undefined || !creep.room.memory.epath ) creep.room.memory.epath = {};
+function getDestTag( creep, dest ) {
     var aRoom = creep.room;
     if ( dest && dest.room !== undefined ) aRoom = dest.room;
     var destTag = aRoom.name;
-    if ( creep.room == aRoom ) destTag = String.fromCharCode( Math.floor( dest.pos.x / 6 )+48, Math.floor( dest.pos.y / 6 )+48 ); else {
+    if ( creep.room == aRoom ) destTag = String.fromCharCode( Math.floor( dest.pos.x / mappingRange )+48, Math.floor( dest.pos.y / mappingRange )+48 ); else {
         var coo = mapCoord( destTag );
         destTag = String.fromCharCode( (97 + coo.x), (97 + coo.y) );
     }
+    return destTag;    
+}
+
+function emov( creep, dest ) {
+    if ( creep.room.memory.epath === undefined || !creep.room.memory.epath ) creep.room.memory.epath = {};
+    var destTag = getDestTag( creep, dest );
     var curTag = String.fromCharCode( creep.pos.x+48, creep.pos.y+48 );
     if ( creep.room.memory.epath[curTag] === undefined ) creep.room.memory.epath[curTag] = {};
     if ( !creep.room.memory.epath[curTag][destTag] && Game.getUsedCpu() < Game.cpuLimit - 50 ) {
@@ -1190,6 +1196,20 @@ function emov( creep, dest ) {
         }
     }
     if ( creep.move( creep.room.memory.epath[curTag][destTag] ) ) console.log( creep.name + ' problem with epathing... ' ); else creep.memory.epathed = true;
+}
+
+function reroute( creep, dest ) {
+    var destTag = getDestTag( creep, dest );
+    var curTag = String.fromCharCode( creep.pos.x+48, creep.pos.y+48 );
+    var lx = creep.pos.x, ly = creep.pos.y;
+    for ( var i = 0; i < 7; i++ ) {
+        if ( i == 0 || creep.room.lookForAt( 'creep', lx, ly ).length > 0 ) {
+            if ( creep.room.memory.ePath[curTag] != undefined && creep.room.memory.ePath[curTag][destTag] != undefined ) {
+                
+            } else break;
+        } else return creep.room.getPositionAt( lx, ly );
+    }
+    return null;
 }
 
 function bypass( creep, dest ) {
