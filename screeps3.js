@@ -209,7 +209,7 @@ function rS() {
             var hxl = []; addPart(hxl,CARRY,8); addPart(hxl,MOVE,4); addPart(hxl,HEAL,4); 
             
             // The Most Elite Military
-            var axh = []; addPart(axh,MOVE,14); addPart(axh,RANGED_ATTACK,11); addPart(axh,HEAL,4); addPart(axh,MOVE,1);
+            var axh = []; addPart(axh,MOVE,14); addPart(axh,RANGED_ATTACK,10); addPart(axh,HEAL,5); addPart(axh,MOVE,1);
             var hxh = []; addPart(hxh,MOVE,15); addPart(hxh,HEAL,15); 
             
             // Anti-Seeker
@@ -274,7 +274,7 @@ function rS() {
                     }
                     
                     // Roving Haulers
-                    if ( avail - encumbered > 10000 + i * 10000 && Game.creeps['c'+i] === undefined && spawner.room.memory.storedEnergy > 25000 ) { if ( spawner.createCreep( c, 'c'+i, { role: 'harv' } ) === 0 ) continue; }
+                    // if ( avail - encumbered > 30000 + i * 30000 && Game.creeps['c'+i] === undefined && spawner.room.memory.storedEnergy > 25000 ) { if ( spawner.createCreep( c, 'c'+i, { role: 'harv' } ) === 0 ) continue; }
                     
                     if ( ( Game.flags['c'+i+suf]   || Game.flags['oc'+i+suf] )   && Game.creeps['c'+i+suf] === undefined ) { if ( spawner.createCreep( c, 'c'+i+suf, { role: 'harv' } ) === 0 ) continue; }
                     if ( ( Game.flags['cs'+i+suf]  || Game.flags['ocs'+i+suf] )  && Game.creeps['cs'+i+suf]  === undefined )  { if ( spawner.createCreep( c, 'cs'+i+suf, { role: 'sup' } ) === 0 ) continue; }
@@ -293,7 +293,7 @@ function rS() {
                 }  
             }
             
-            if ( spawner.room.memory.storedEnergy > 10000 || enemies.length > 0 ) {  
+            if ( spawner.room.memory.storedEnergy > 2000 || enemies.length > 0 ) {  
                 // Minor Siege
                 if ( Game.flags.ms && orange( spawner, Game.flags.ms) < 250 ) {
                     if ( Game.creeps.ms1 === undefined && spawner.createCreep( x, 'ms1', { rally: 'ms', rx: 0, ry: 0 } ) === 0 ) continue;
@@ -878,7 +878,7 @@ function rC() {
             // Looting
             if ( creep.carry.energy >= creep.carryCapacity * harvFull ) creep.memory.loot = null;
             if ( !source && creep.memory.loot !== null && !creep.memory.rally && creep.carry.energy < creep.carryCapacity * harvFull ) {
-                if ( Game.getObjectById( creep.memory.loot ) !== null && Game.getObjectById( creep.memory.loot ).energy > creep.carryCapacity - 100 ) source = Game.getObjectById( creep.memory.loot ); else creep.memory.loot = null;
+                if ( Game.getObjectById( creep.memory.loot ) !== null && Game.getObjectById( creep.memory.loot ).energy > 100 ) source = Game.getObjectById( creep.memory.loot ); else creep.memory.loot = null;
             }
 
             if ( !source && creep.memory.role == 'sup' && creep.carry.energy > 0 && creep.memory.noExt !== undefined ) source = creep.pos.findClosestByRange( FIND_MY_CREEPS, { filter: function(object) { return object.memory.role != 'miner' && object.getActiveBodyparts( WORK ) > 9 && object.carry.energy < object.carryCapacity - 20; } } );
@@ -902,7 +902,7 @@ function rC() {
             if ( creep.memory.role == 'trans' && creep.carry.energy < creep.carryCapacity * harvFull ) source = Game.spawns[creep.memory.spawn]; 
             if ( creep.memory.role == 'trans' && creep.carry.energy >= creep.carryCapacity * harvFull && Game.flags['o'+creep.memory.rally] && Game.flags['o'+creep.memory.rally].room == creep.room && creep.room.storage ) source = creep.room.storage; 
 
-            if ( ( !source || ( creep.memory.rally === undefined && creep.memory.target === undefined ) || ( source.room == creep.room && creep.memory.role == 'harv' && !( creep.pos.x == 0 || creep.pos.x == 49 || creep.pos.y == 0 || creep.pos.y == 49 ) ) ) && ( creep.carry.energy < creep.carryCapacity * harvFull ) && !creep.memory.returnToBase ) {
+            if ( ( !source || ( creep.memory.rally === undefined && creep.memory.target === undefined ) || ( source.room == creep.room && creep.memory.role == 'harv' && !( creep.pos.x == 0 || creep.pos.x == 49 || creep.pos.y == 0 || creep.pos.y == 49 ) ) ) && ( creep.carry.energy < creep.carryCapacity * harvFull ) && !creep.memory.returnToBase && !creep.memory.loot ) {
                 if ( creep.memory.role == 'sup' ) {
                     if ( link && link.pos.inRangeTo( creep, 6 ) ) source = link;
         	        if ( creep.room.storage ) source = creep.room.storage;
@@ -917,10 +917,11 @@ function rC() {
                         if ( thisE.energy / ( orange( thisE, creep ) * .5 + 1 ) > want && !thisE.storage && thisE.energy > orange( thisE, creep ) && thisE.energy > 0 && ( thisE.energy > 1000 || creep.memory.target !== undefined || creep.memory.rally !== undefined ) && ( thisE.energy > 2000 || !creep.memory.loot ) && !( enem && thisE.pos.inRangeTo( enem, 6 ) ) && !( lair && thisE.pos.inRangeTo( lair, 6 ) ) ) { want = thisE.energy / ( orange( thisE, creep ) * .5 + 1 ); select = i; }
                     }
                     if ( want > -9999 ) { source = creep.room.memory.allEnergy[select]; creep.memory.loot = null; }
+                    
                     if ( !source && ( !creep.memory.target || !Game.flags[creep.memory.target] ) && !creep.memory.rally && !creep.memory.loot ) {
                         var mpx = 0, mpy = 0, epx = 0, epy = 0;
-                        for ( var e = 1; e < 5; e++ ) {
-                            var bounty = 0, bountySel = -1;
+                        for ( var e = 0; e < 5; e++ ) {
+                            var bounty = 2000, bountySel = -1;
                             for ( var i = 0; i < allDrop.length; i++ ) {
                                 var mpx = mapCoord( creep.room.name ).x, mpy = mapCoord( creep.room.name ).y, epx = mapCoord( allDrop[i].room.name ).x, epy = mapCoord( allDrop[i].room.name ).y;
                                 if ( range( mpx, mpy, epx, epy ) <= e && allDrop[i].energy - allDrop[i].enc > bounty && !allDrop[i].pos.findInRange( FIND_HOSTILE_CREEPS, 15 ).length ) {
@@ -1030,9 +1031,9 @@ function rC() {
         }
 
         // Move to a healer if needed
-        if ( creep.fatigue == 0 && creep.hits < creep.hitsMax ) {
+        if ( creep.fatigue == 0 && creep.hits < creep.hitsMax && ( !creep.memory.mil || creep.hits < creep.hitsMax * .6 ) ) {
             target = creep.pos.findClosestByRange(FIND_MY_CREEPS, { filter: function(object) { return object.getActiveBodyparts(HEAL) > object.hitsMax / 700; } } );
-	        if ( target ) { m( creep, target, 1 ); }
+	        if ( target ) { creep.memory.moveOrder = 0; m( creep, target, 1 ); }
         }     
 
         // Warriors report to the army position, if it exists
@@ -1055,10 +1056,10 @@ function whatBase( creep ) {
             var spawner = Game.spawns[spawnername];
             
             if ( spawner.room.memory.storedEnergy < storageLevel - 50000 ) {
-                var ra = orange( creep, spawner );
+                var ra = orange( creep, spawner ) + spawner.room.memory.storedEnergy / 10000;
                 
                 if ( ra < whichRange ) { whichBase = spawner; whichRange = ra; }
-                if ( ra < distRange && spawner.room.memory.storedEnergy < 200000 && spawner.room.memory.storedEnergy / 10000 < whichRange ) { whichBase = spawner; whichRange = spawner.room.memory.storedEnergy / 10000; }
+                // if ( ra < distRange && spawner.room.memory.storedEnergy < 200000 && spawner.room.memory.storedEnergy / 10000 < whichRange ) { whichBase = spawner; whichRange = spawner.room.memory.storedEnergy / 10000; }
             }
         }
         if ( whichBase ) creep.memory.base = whichBase.name; else creep.memory.base = null;
