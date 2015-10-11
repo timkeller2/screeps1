@@ -260,7 +260,7 @@ function rS() {
                         var vc = [];  addPart(vc,CARRY,eachCarry);  addPart(vc,MOVE,eachMove);  // Create just the right bot for the mine...
                         if ( helpers > 9 ) helpers = 9;
                         if ( mineDist < 5 ) helpers = 0;
-                        if ( helpers > 2 ) helpers = Math.floor( helpers * .8 );
+                        // if ( helpers > 2 ) helpers = Math.floor( helpers * .8 );
                         for ( var aid = helpers - 1; aid > -1; aid-- ) {
                             if ( Game.time / ( aid * 3 ) == Math.floor( Game.time / ( aid * 3 ) ) ) {
                                 if ( aid > 0 ) {
@@ -274,7 +274,7 @@ function rS() {
                     }
                     
                     // Roving Haulers
-                    // if ( avail - encumbered > 30000 + i * 30000 && Game.creeps['c'+i] === undefined && spawner.room.memory.storedEnergy > 25000 ) { if ( spawner.createCreep( c, 'c'+i, { role: 'harv' } ) === 0 ) continue; }
+                    if ( avail - encumbered > 30000 + i * 30000 && Game.creeps['c'+i] === undefined && spawner.room.memory.storedEnergy > 25000 ) { if ( spawner.createCreep( c, 'c'+i, { role: 'harv' } ) === 0 ) continue; }
                     
                     if ( ( Game.flags['c'+i+suf]   || Game.flags['oc'+i+suf] )   && Game.creeps['c'+i+suf] === undefined ) { if ( spawner.createCreep( c, 'c'+i+suf, { role: 'harv' } ) === 0 ) continue; }
                     if ( ( Game.flags['cs'+i+suf]  || Game.flags['ocs'+i+suf] )  && Game.creeps['cs'+i+suf]  === undefined )  { if ( spawner.createCreep( c, 'cs'+i+suf, { role: 'sup' } ) === 0 ) continue; }
