@@ -1,9 +1,9 @@
 var avail = 0, encumbered = 0, hostility = 0, cpuR = 0, cpuC = 0, cpuS = 0, roomsexp = 0, loot = null, lootAmount = 0, lootroom = '', notHurt = true, tempStorageLimit = 3000;
 var hostileName = '', hostileRoom = '', topUser = null, topUserAmount = 0, maxHostile = 9999, allDrop = [], allSource = [], harvFull = .75, mapping = 0, totalStored = 0, totalFriends = 0, totEvadeCpu = 0;
-var maxNodes = 2000, allies = [ 'theAEmix', 'Waveofbabies', 'Vertigan', 'Rumatah' ], storageLevel = 1000000, minBuild = 350000, skipCpuLevel = 25, distRange = 150, mappingRange = 3, bypassCode = false, rampartMult = 1000, growthRate = 10, totalSources = 0, unEncSources = 0, unEncSourcesE = 0;
-var roaming = 160, canSpawn = true, cpuByRole = {}, supStop = 75, harvStop = 25, pauseBot = 75, spawnerDiv = 30, ruralSites = [], roomDiv = 35, processSpawner = true, hasMapped = false, startCpu = null;
+var maxNodes = 2000, allies = [ 'theAEmix', 'Waveofbabies', 'Vertigan', 'Rumatah' ], storageLevel = 1000000, minBuild = 350000, skipCpuLevel = 25, distRange = 150, mappingRange = 3, bypassCode = false, rampartMult = 500, growthRate = 10, totalSources = 0, unEncSources = 0, unEncSourcesE = 0;
+var roaming = 160, canSpawn = true, cpuByRole = {}, supStop = 175, harvStop = 75, pauseBot = 75, spawnerDiv = 20, ruralSites = [], roomDiv = 35, processSpawner = true, hasMapped = false, startCpu = null;
 
-runScreeps();
+// runScreeps();
 
 function runScreeps() {
     if ( Game.time / spawnerDiv == Math.floor( Game.time / spawnerDiv ) ) supStop += 250;
@@ -228,6 +228,7 @@ function rR() {
         rm.memory.cpuUse = 0;
         if ( rm.storage ) rm.memory.tempStorageLimit = 600; else rm.memory.tempStorageLimit = tempStorageLimit;
         if ( Game.time / 3 == Math.floor( Game.time / 3) ) rm.memory.noExtNeed = false;
+        if ( Game.time / roomDiv == Math.floor( Game.time / roomDiv) ) rm.memory.mil = 0;
         totalStored += stored;
     }
     cpuR = Game.getUsedCpu() - cpuR;
@@ -262,11 +263,8 @@ function rS() {
             // if ( exe < ex / 2 && friends.length > 4 ) { console.log( spawner.name + ' ' + exe + '/' + ex ); continue; }
             var sites = spawner.room.find( FIND_CONSTRUCTION_SITES );
             var rampartlevel = spawner.room.controller.level * spawner.room.controller.level * rampartMult;
-    	    var repairSites = spawner.room.find( FIND_STRUCTURES, { filter: function(object) { return object.structureType != STRUCTURE_WALL && object.hits < object.hitsMax / 2 &&
-    	                                                                                        ( object.hits < rampartlevel / 2 || ( ( [ 2, 47 ].indexOf( object.pos.x ) > -1 || [ 2, 47 ].indexOf( object.pos.y ) > -1 ) && object.hits < rampartlevel * 3 ) || 
-    	                                                                                        ( object.pos.findInRange( FIND_MY_SPAWNS, 0 ) && object.hits < rampartlevel * 45 )
-    	                                                                                        ); } } );
-            
+    	    var repairSites = spawner.room.find( FIND_STRUCTURES, { filter: function(object) { return object.structureType != STRUCTURE_WALL && object.hits < object.hitsMax / 2 && object.hits < rampartlevel / 2; } } );
+
             spawner.memory.friends = 0;
             spawner.memory.military = 0;
             spawner.memory.artillery = 0;
@@ -473,10 +471,12 @@ function rS() {
                         var targetRoom = null;
                         if ( Game.flags['qm'+i] ) targetRoom = Game.flags['qm'+i].room;
                         if ( !targetRoom && Game.flags['oqm'+i] ) targetRoom = Game.flags['oqm'+i].room;
-                        for ( var ii = 3 + Math.floor( targetRoom ? targetRoom.memory.totalEnergy / 5000 : 0 ); ii > -1; ii-- ) { if ( targetRoom && targetRoom.memory.totalEnergy > 2000 && Game.creeps['c'+i+'qmc'+ii] === undefined && spawner.createCreep( c, 'c'+i+'qmc'+ii, { rally: 'qm'+i, role: 'harv' } ) === 0 ) continue; }
-                        for ( var ii = 0; ii < 2; ii++ ) {
-                            if ( Game.creeps['rr'+i+'qm'+ii+'bu'] === undefined || Game.creeps['rr'+i+'qm'+ii+'bu'].ticksToLive < 250 ) if ( Game.creeps['rr'+i+'qm'+ii] === undefined ) spawner.createCreep( rr, 'rr'+i+'qm'+ii, { rally: 'qm'+i, role: 'miner' } ); 
-                            if ( Game.creeps['rr'+i+'qm'+ii] && Game.creeps['rr'+i+'qm'+ii].ticksToLive < 250 ) if ( Game.creeps['rr'+i+'qm'+ii+'bu'] === undefined ) spawner.createCreep( rr, 'rr'+i+'qm'+ii+'bu', { rally: 'qm'+i, role: 'miner' } ); 
+                        if ( targetRoom && targetRoom.memory.mil > 0 ) {
+                            for ( var ii = 3 + Math.floor( targetRoom ? targetRoom.memory.totalEnergy / 5000 : 0 ); ii > -1; ii-- ) { if ( targetRoom && targetRoom.memory.totalEnergy > 2000 && Game.creeps['c'+i+'qmc'+ii] === undefined && spawner.createCreep( c, 'c'+i+'qmc'+ii, { rally: 'qm'+i, role: 'harv' } ) === 0 ) continue; }
+                            for ( var ii = 0; ii < 2; ii++ ) {
+                                if ( Game.creeps['rr'+i+'qm'+ii+'bu'] === undefined || Game.creeps['rr'+i+'qm'+ii+'bu'].ticksToLive < 250 ) if ( Game.creeps['rr'+i+'qm'+ii] === undefined ) spawner.createCreep( rr, 'rr'+i+'qm'+ii, { rally: 'qm'+i, role: 'miner' } ); 
+                                if ( Game.creeps['rr'+i+'qm'+ii] && Game.creeps['rr'+i+'qm'+ii].ticksToLive < 250 ) if ( Game.creeps['rr'+i+'qm'+ii+'bu'] === undefined ) spawner.createCreep( rr, 'rr'+i+'qm'+ii+'bu', { rally: 'qm'+i, role: 'miner' } ); 
+                            }
                         }
                         if ( Game.creeps['a'+i+'qm1'] === undefined || Game.creeps['a'+i+'qm1'].ticksToLive < 300 ) {
                             if ( Game.creeps['a'+i+'qm0'] === undefined ) if ( spawner.createCreep( axh, 'a'+i+'qm0',  { rally: 'qm'+i } ) === 0 ) continue;
@@ -603,7 +603,7 @@ function rC() {
     	if ( creep.memory.mine !== undefined && creep.memory.role != 'harv' && creep.pos.inRangeTo( Game.getObjectById( creep.memory.mine ), 1 ) ) { creep.harvest( Game.getObjectById( creep.memory.mine ) ); logCpu( creep ); continue; } else creep.memory.mine = undefined;
 
         // Identify Military Units
-    	if ( creep.getActiveBodyparts( ATTACK ) || creep.getActiveBodyparts( RANGED_ATTACK ) || creep.getActiveBodyparts( HEAL ) ) creep.memory.mil = true; else creep.memory.mil = false;
+    	if ( creep.getActiveBodyparts( ATTACK ) || creep.getActiveBodyparts( RANGED_ATTACK ) || creep.getActiveBodyparts( HEAL ) ) { creep.memory.mil = true; creep.room.memory.mil = 1; } else creep.memory.mil = false;
     	
         // Skips bots under constructions, report military creeps
     	if ( creep.spawning ) {
