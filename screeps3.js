@@ -1,26 +1,36 @@
-var avail = 0, encumbered = 0, hostility = 0, cpuR = 0, cpuC = 0, cpuS = 0, roomsexp = 0, loot = null, lootAmount = 0, lootroom = '', notHurt = true, tempStorageLimit = 3000;
-var hostileName = '', hostileRoom = '', topUser = null, topUserAmount = 0, maxHostile = 9999, allDrop = [], allSource = [], harvFull = .75, mapping = 0, totalStored = 0, totalFriends = 0, totEvadeCpu = 0;
-var maxNodes = 2000, allies = [ 'theAEmix', 'Waveofbabies', 'Vertigan', 'Rumatah' ], storageLevel = 1000000, minBuild = 350000, skipCpuLevel = 25, distRange = 150, mappingRange = 7, bypassCode = false, rampartMult = 750, growthRate = 10, totalSources = 0, unEncSources = 0, unEncSourcesE = 0;
-var roaming = 160, canSpawn = true, cpuByRole = {}, cpuByRSlow = {}, supStop = 75, harvStop = 50, pauseBot = 100, spawnerDiv = 20, ruralSites = [], roomDiv = 35, processSpawner = true, hasMapped = false, startCpu = null, rLevel = 50;
+var avail = 0, encumbered = 0, hostility = 0, cpuR = 0, cpuC = 0, cpuS = 0, cpuB = 0, cpuF = 0, cpuE = 0, roomsexp = 0, loot = null, lootAmount = 0, lootroom = '', notHurt = true, tempStorageLimit = 3000;
+var hostileName = '', hostileRoom = '', topUser = null, topUserAmount = 0, maxHostile = 9999, allDrop = [], allSource = [], allCo = [], allHre = [], harvFull = .75, mapping = 0, totalStored = 0, totalFriends = 0, totEvadeCpu = 0;
+var maxNodes = 2000, allies = [ 'theAEmix', 'Waveofbabies', 'Vertigan', 'Rumatah' ], storageLevel = 1000000, minBuild = 350000, skipCpuLevel = 25, distRange = 150, mappingRange = 10, bypassCode = false, rampartMult = 2500, growthRate = 10, totalSources = 0, unEncSources = 0, unEncSourcesE = 0;
+var roaming = 160, canSpawn = true, cpuByRole = {}, cpuByRSlow = {}, supStop = 75, harvStop = 50, pauseBot = 100, spawnerDiv = 20, ruralSites = [], roomDiv = 35, processSpawner = true, hasMapped = false, startCpu = null, rLevel = 50, maxHelpers = 2;
 
 runScreeps();
 
 function runScreeps() {
+    cpuB = Game.getUsedCpu();
     if ( Game.time / spawnerDiv == Math.floor( Game.time / spawnerDiv ) ) supStop += 250;
-    if ( Game.time / roomDiv == Math.floor( Game.time / roomDiv ) ) supStop += 250;
-    if ( Game.flags.bypass ) bypassCode = true;
+    if ( Game.time / roomDiv == Math.floor( Game.time / roomDiv ) ) { supStop += 250; console.log( 'Processing room caches...' ); }
 
+    if ( Game.flags.bypass ) bypassCode = true;
+    
+    var test = Memory.cpu;
+    cpuB = Game.getUsedCpu() - cpuB;
+    
     rF();  // Run Flags
     rR();  // Run Rooms
     rC();  // Run Creeps
     rS();  // Run Spawners
 
-    Memory.cpu = Memory.cpu + cpuR + cpuC + cpuS;
-    Memory.lastcpu = cpuR + cpuC + cpuS;
+    if ( Game.cpuLimit < 500 ) Memory.governmentShutdowns = Memory.governmentShutdowns + 1;
+    Memory.cpu = Memory.cpu + cpuR + cpuC + cpuS + cpuB + cpuF;
+    Memory.cpuB = Memory.cpuB + cpuB;
+    Memory.cpuF = Memory.cpuF + cpuF;
+    Memory.cpuR = Memory.cpuR + cpuR;
+    Memory.cpuC = Memory.cpuC + cpuC;
+    Memory.cpuS = Memory.cpuS + cpuS;
+    Memory.lastcpu = cpuR + cpuC + cpuS + cpuB + cpuF;
     Memory.mapping = Memory.mapping + mapping;
 
-    //if( cpuR + cpuC + cpuS > 300 ) console.log( 'CPU: Rooms: '+ Math.floor( cpuR ) + '  Creeps: ' + Math.floor( cpuC ) + '  Spawners: ' + Math.floor( cpuS ) + '  Top User: ' + topUser.name + ' ' + topUser.pos + '  e: ' + topUser.memory.epathed +  '  CPU: ' + topUser.memory.usedCpu1 + ', ' + topUser.memory.usedCpu2 + ', ' + topUser.memory.usedCpu3 + ', Total: ' + topUser.memory.usedCpu + '  Creeps Mapping: ' + mapping );
-    if( Game.flags.cpu ) console.log( 'CPU: Rooms: '+ Math.floor( cpuR ) + '  Creeps: ' + Math.floor( cpuC ) + '  Spawners: ' + Math.floor( cpuS ) + '  Top User: ' + topUser.name + ' ' + topUser.pos + '  e: ' + topUser.memory.epathed +  '  CPU: ' + topUser.memory.usedCpu1 + ', ' + topUser.memory.usedCpu2 + ', ' + topUser.memory.usedCpu3 + ', Total: ' + topUser.memory.usedCpu + '  Creeps Mapping: ' + mapping );
+    if ( Game.flags.cpu ) console.log( 'CPU ' + Math.floor( Memory.lastcpu ) + ':  B: ' + Math.floor( cpuB ) + ' F: ' + Math.floor( cpuF ) + ' R: ' + Math.floor( cpuR ) + ' C: ' + Math.floor( cpuC ) + ' S: ' + Math.floor( cpuS ) + '  Top User: ' + topUser.name + ' ' + topUser.pos + '  e: ' + topUser.memory.epathed +  '  CPU: ' + topUser.memory.usedCpu1 + ', ' + topUser.memory.usedCpu2 + ', ' + topUser.memory.usedCpu3 + ', Total: ' + topUser.memory.usedCpu + '  Creeps Mapping: ' + mapping );
     if ( totEvadeCpu > 50 ) console.log( 'Evasion Cpu: ' + totEvadeCpu );
     
     if ( Game.time / 10 == Math.floor( Game.time / 10 ) || Memory.lastReport < Game.time - 10 ) {
@@ -34,13 +44,19 @@ function runScreeps() {
             console.log( sp.name + '  Rooms: ' + roomsexp + '  Bots: ' + sp.memory.friends + '  Mil: '+ sp.memory.military + '  Art: '+ sp.memory.artillery + '  Heal: '+ sp.memory.healers +'  Carry: ' + sp.memory.carriers + '  Builds: ' + sp.memory.parts*3 + '/1500  Dying: '+ sp.memory.sick + '% load   Stored: ' + sp.room.memory.storedEnergy + '  Ex: ' + sp.memory.exe + '  Spawning: ' + creep );
             totalFriends += sp.memory.friends;
         }
-        console.log( 'Sources: ' + unEncSourcesE + '/' + unEncSources + '/' + totalSources + '  Stored: ' + totalStored + '  Avail: ' + avail + ' - ' + encumbered + ' = ' + Math.floor( avail - encumbered ) + '   Hostility: ' + hostility + ' ' + hostileName + ' ' + hostileRoom + '  Loot: ' + lootAmount + ' in '+lootroom+'  AvCpu: ' +  Math.floor(Memory.cpu/10) + '/' + Game.cpuLimit + '  Skipped Bots: ' + Math.floor( Memory.skips / 10 ) + '/' + Math.floor( Memory.pauseBots / 10 ) + '/' + totalFriends + '  Mapping: ' + Memory.mapping );
+        console.log( 'Sources: ' + unEncSourcesE + '/' + unEncSources + '/' + totalSources + '  Stored: ' + totalStored + '  Avail: ' + avail + ' - ' + encumbered + ' = ' + Math.floor( avail - encumbered ) + '   Hostility: ' + hostility + ' ' + hostileName + ' ' + hostileRoom + '  Loot: ' + lootAmount + ' in '+lootroom+'  AvCpu: b'+  Math.floor(Memory.cpuB/10) + ' f' + Math.floor(Memory.cpuF/10) + ' r' +  Math.floor(Memory.cpuR/10) + ' c' + Math.floor(Memory.cpuC/10) + ' s' +  Math.floor(Memory.cpuS/10) + '=' +  Math.floor(Memory.cpu/10) + '/' + Game.cpuLimit + '  Skipped Bots: ' + Math.floor( Memory.skips / 10 ) + '/' + Math.floor( Memory.pauseBots / 10 ) + '/' + totalFriends + '  Mapping: ' + Memory.mapping + '  Shutdowns: ' + Memory.governmentShutdowns + '  AllCon: ' + allCo.length );
         Memory.cpu = 0;
+        Memory.cpuB = 0;
+        Memory.cpuF = 0;
+        Memory.cpuR = 0;
+        Memory.cpuC = 0;
+        Memory.cpuS = 0;
         Memory.mcpu = 0;
         Memory.skips = 0;
         Memory.mapping = 0;
         Memory.pauseBots = 0; 
         Memory.healerHeal = 0;
+        Memory.governmentShutdowns = 0;
         Memory.healer = null;
 
         if ( Game.flags.cpuUnit ) {
@@ -83,6 +99,7 @@ function houseCleaning() {
 }
 
 function rF() {
+    cpuF = Game.getUsedCpu();
     for ( var flagname in Game.flags ) {
         var fl = Game.flags[flagname];
 
@@ -96,6 +113,7 @@ function rF() {
             }
         }
     }
+    cpuF = Game.getUsedCpu() - cpuF;
 }
 
 function rR() {
@@ -119,8 +137,10 @@ function rR() {
         if ( !rm.memory.lastGrowth ) rm.memory.lastGrowth = 0;
         var sites = rm.find( FIND_CONSTRUCTION_SITES ).length;
         if ( sites > 0 && Game.time / 300 == Math.floor( Game.time / 300 ) ) console.log( rm.name + ' ' + sites + ' sites' );
-        if ( ( Game.time / 300 == Math.floor( Game.time / 300 ) || rm.memory.lastGrowth < Game.time - 300 ) && sites < growthRate && Game.getUsedCpu() < 50 ) {
-            rm.memory.lastGrowth = Game.time;
+        if ( rm.memory.lastGrowth + 300 < Game.time && sites < growthRate && Game.getUsedCpu() < 50 ) {
+            console.log( 'Processing room structure natural growth...' );
+            rm.memory.lastGrowth = Game.time + Math.floor( Math.random() * 1200 );
+            
             // Structure Ramparts
             var stru = rm.find( FIND_STRUCTURES, { filter: function(object) { return object.structureType == STRUCTURE_SPAWN || object.structureType == STRUCTURE_STORAGE; } } );
             for ( var i = 0; i < stru.length && sites < growthRate; i++ ) {
@@ -140,9 +160,10 @@ function rR() {
                 var str = stru[i];
                 if ( !rampa( rm, str.pos.x,     str.pos.y     ) && rm.createConstructionSite( str.pos.x    , str.pos.y    , STRUCTURE_RAMPART ) == 0 ) { sites++; }
             }
-            
+
+            /*
             // Room Ramparts
-            var ramparts = rm.find( FIND_STRUCTURES, { filter: function(object) { return object.structureType == STRUCTURE_RAMPART && ( object.pos.x == 2 || object.pos.x == 47 || object.pos.y == 2 || object.pos.y == 47 ); } } );
+            var ramparts = rm.find( FIND_STRUCTURES, { filter: function(object) { return ( object.structureType == STRUCTURE_RAMPART || object.structureType == STRUCTURE_WALL ) && ( object.pos.x == 2 || object.pos.x == 47 || object.pos.y == 2 || object.pos.y == 47 ); } } );
             for ( var i = 0; i < ramparts.length && sites < growthRate; i++ ) {
                 var ram = ramparts[i];
                 if ( ram.pos.x == 2 || ram.pos.x == 47 ) {
@@ -154,7 +175,8 @@ function rR() {
                     if ( !rampa( rm, ram.pos.x + 1, ram.pos.y ) && rm.createConstructionSite( ram.pos.x + 1, ram.pos.y, STRUCTURE_RAMPART ) == 0 ) { sites++; }
                 }
             }
-            
+            */
+
             // Extension Roads
             var extensions = rm.find( FIND_STRUCTURES, { filter: function(object) { return object.structureType == STRUCTURE_EXTENSION || object.structureType == STRUCTURE_LINK; } } );
             for ( var i = 0; i < extensions.length && sites < growthRate; i++ ) {
@@ -164,23 +186,39 @@ function rR() {
                 if ( !roa( rm, ram.pos.x - 1, ram.pos.y ) && rm.createConstructionSite( ram.pos.x - 1, ram.pos.y, STRUCTURE_ROAD ) == 0 ) { sites++; }
                 if ( !roa( rm, ram.pos.x + 1, ram.pos.y ) && rm.createConstructionSite( ram.pos.x + 1, ram.pos.y, STRUCTURE_ROAD ) == 0 ) { sites++; }
             }
+            
         }
 
-        if ( rm.controller ) var rampartlevel = rm.controller.level * rm.controller.level * rampartMult; else var rampartlevel = 1000;
+        if ( rm.controller ) var rampartlevel = rm.controller.level * rm.controller.level * rampartMult; else var rampartlevel = 5000;
+        if ( rampartlevel < 5000 ) rampartlevel = 5000;
         rm.memory.sites = sites;        
-        rm.memory.availEnergy = rm.find( FIND_DROPPED_ENERGY, { filter: function(object) { var lookCreep = object.pos.lookFor('creep'); return !( lookCreep.length > 0 && lookCreep[0].owner.username == 'Vision' && lookCreep[0].memory.role == 'storage' && !lookCreep[0].memory.linked ); } } );
-        rm.memory.storedEnergy = rm.find( FIND_DROPPED_ENERGY, { filter: function(object) { var lookCreep = object.pos.lookFor('creep'); return (lookCreep.length > 0 && lookCreep[0].owner.username == 'Vision' && lookCreep[0].memory.role == 'storage' && !lookCreep[0].memory.linked ); } } );
-        rm.memory.allEnergy = rm.find( FIND_DROPPED_ENERGY );
+        // if ( !rm.memory.nextLookEnergy || Game.time > rm.memory.nextLookEnergy ) {
+            rm.memory.nextLookEnergy = Game.time + 10 + Math.floor( Math.random() * 10 );
+            rm.memory.availEnergy = rm.find( FIND_DROPPED_ENERGY, { filter: function(object) { var lookCreep = object.pos.lookFor('creep'); return !( lookCreep.length > 0 && lookCreep[0].owner.username == 'Vision' && lookCreep[0].memory.role == 'storage' && !lookCreep[0].memory.linked ); } } );
+            rm.memory.storedEnergy = rm.find( FIND_DROPPED_ENERGY, { filter: function(object) { var lookCreep = object.pos.lookFor('creep'); return (lookCreep.length > 0 && lookCreep[0].owner.username == 'Vision' && lookCreep[0].memory.role == 'storage' && !lookCreep[0].memory.linked ); } } );
+            rm.memory.allEnergy = rm.find( FIND_DROPPED_ENERGY );
+        // }
 
         for ( var i = 0; i < rm.memory.allEnergy.length; i++ ) {
             var thisE = rm.memory.allEnergy[i], aD = allDrop.length;
-            if ( thisE.pos.lookFor('creep').length > 0 && thisE.pos.lookFor('creep')[0].owner.username == 'Vision' && thisE.pos.lookFor('creep')[0].memory.role == 'storage' ) thisE.storage = 1; else thisE.storage = 0;
-            
-            allDrop[aD] = rm.memory.allEnergy[i];
-            allDrop[aD].enc = 0;
+            if ( thisE.pos !== undefined ) {
+                if ( thisE.pos.lookFor('creep').length > 0 && thisE.pos.lookFor('creep')[0].owner.username == 'Vision' && thisE.pos.lookFor('creep')[0].memory.role == 'storage' ) thisE.storage = 1; else thisE.storage = 0;
+                
+                allDrop[aD] = rm.memory.allEnergy[i];
+                allDrop[aD].enc = 0;
+    
+                for ( var name in Game.creeps ) { var creep = Game.creeps[name]; if ( creep.memory.loot && creep.memory.loot == allDrop[aD].id ) allDrop[aD].enc += ( creep.carryCapacity - creep.carry.energy ); }
+                encumbered += allDrop[aD].enc;
+            }
+        }
 
-            for ( var name in Game.creeps ) { var creep = Game.creeps[name]; if ( creep.memory.loot && creep.memory.loot == allDrop[aD].id ) allDrop[aD].enc += ( creep.carryCapacity - creep.carry.energy ); }
-            encumbered += allDrop[aD].enc;
+        // Manage Source Maintenance
+        if ( !rm.memory.so ) {
+            var src = rm.find( FIND_SOURCES ); 
+            rm.memory.so = [];
+            for ( var i = 0; i < src.length; i++ ) {
+                rm.memory.so[i] = src[i].id;
+            }
         }
 
         // Manage Extension Maintenance
@@ -190,27 +228,40 @@ function rR() {
             rm.memory.ex[i] = ext[i].id;
         }
 
-        // Manage Link Maintenance
-        var links = rm.find( FIND_MY_STRUCTURES, { filter: function(object) { return object.structureType == STRUCTURE_LINK; } } );
-        rm.memory.li = [];
-        for ( var i = 0; i < links.length; i++ ) {
-            rm.memory.li[i] = links[i].id;
+        if ( Game.time / roomDiv == Math.floor( Game.time / roomDiv ) ) {
+            // Detect Room Objects for Creeps
+        	rm.memory.lairs = rm.find( FIND_STRUCTURES, { filter: function(object) { return object.structureType == STRUCTURE_KEEPER_LAIR; } } ).length;
+        	rm.memory.links = rm.find( FIND_STRUCTURES, { filter: function(object) { return object.structureType == STRUCTURE_LINK; } } ).length;
+            rm.memory.extensions = rm.find( FIND_STRUCTURES, { filter: function(object) { return object.structureType == STRUCTURE_EXTENSION; } } ).length;
+            rm.memory.sources = rm.find( FIND_SOURCES ).length;
+            
+            // Manage Link Maintenance
+            var links = rm.find( FIND_MY_STRUCTURES, { filter: function(object) { return object.structureType == STRUCTURE_LINK; } } );
+            rm.memory.li = [];
+            for ( var i = 0; i < links.length; i++ ) {
+                rm.memory.li[i] = links[i].id;
+            }
+
         }
 
+        // Manage Repair Maintenance
+        var repa = rm.find( FIND_STRUCTURES, { filter: function(object) { return object.hits < object.hitsMax * .75 && object.hits < rampartlevel * .75; } } );
+        rm.memory.re = [];
+        rm.memory.hre = [];
+        rm.memory.hpre = [];
+        for ( var i = 0; i < repa.length; i++ ) {
+            rm.memory.re[i] = repa[i].id;
+            if ( repa[i].hits < repa[i].hitsMax / 2 && repa[i].hits < rampartlevel / 2 && repa[i].structureType != STRUCTURE_ROAD ) { rm.memory.hre[ rm.memory.hre.length ] = repa[i].id; allHre[ allHre.length ] = repa[i].id; }
+            if ( repa[i].hits < repa[i].hitsMax / 10 && repa[i].hits < rampartlevel / 10 && repa[i].structureType == STRUCTURE_ROAD ) { rm.memory.hre[ rm.memory.hre.length ] = repa[i].id; allHre[ allHre.length ] = repa[i].id; }
+            if ( repa[i].hits < repa[i].hitsMax / 10 && repa[i].hits < rampartlevel / 10 && repa[i].structureType != STRUCTURE_ROAD ) rm.memory.hpre[ rm.memory.hpre.length ] = repa[i].id;
+        }
+            
         // Manage Construction Maintenance
         var cons = rm.find( FIND_MY_CONSTRUCTION_SITES );
         rm.memory.co = [];
         for ( var i = 0; i < cons.length; i++ ) {
             rm.memory.co[i] = cons[i].id;
-        }
-
-        // Manage Repair Maintenance
-        var repa = rm.find( FIND_STRUCTURES, { filter: function(object) { return object.structureType != STRUCTURE_WALL && object.hits < object.hitsMax && object.hits < rampartlevel; } } );
-        rm.memory.re = [];
-        rm.memory.hre = [];
-        for ( var i = 0; i < repa.length; i++ ) {
-            rm.memory.re[i] = repa[i].id;
-            if ( repa[i].hits < repa.hitsMax / 2 && repa[i].hits < rampartlevel / 2 ) rm.memory.hre[ rm.memory.hre.length ] = repa[i].id;
+            allCo[allCo.length] = cons[i].id;
         }
 
         // Manage Workers
@@ -230,15 +281,7 @@ function rR() {
         var lk = rm.find( FIND_MY_CREEPS );
         for ( var i = 0; i < lk.length; i++ ) {
             if ( lk[i].memory.role == 'storage' && lk[i].carry.energy < lk[i].carryCapacity && ( Math.abs(lk[i].memory.storedEnergy) < rm.memory.tempStorageLimit || !rm.storage ) && !lk[i].memory.linked ) rm.memory.ne[ rm.memory.ne.length ] = lk[i].id;
-            if ( lk[i].carry.energy < lk[i].carryCapacity - lk[i].getActiveBodyparts( WORK ) - 1 && ( lk[i].memory.role == 'sup' || lk[i].getActiveBodyparts( WORK ) > 0 ) && lk[i].memory.wantEnergy && lk[i].memory.role != 'harv' && ( lk[i].memory.role != 'miner' || ( lk[i].memory.role == 'miner' && lk[i].memory.accum ) ) ) rm.memory.ne[ rm.memory.ne.length ] = lk[i].id;
-        }
-
-        // Detect Room Objects for Creeps
-        if ( Game.time / roomDiv == Math.floor( Game.time / roomDiv ) ) {
-        	rm.memory.lairs = rm.find( FIND_STRUCTURES, { filter: function(object) { return object.structureType == STRUCTURE_KEEPER_LAIR; } } ).length;
-        	rm.memory.links = rm.find( FIND_STRUCTURES, { filter: function(object) { return object.structureType == STRUCTURE_LINK; } } ).length;
-            rm.memory.extensions = rm.find( FIND_STRUCTURES, { filter: function(object) { return object.structureType == STRUCTURE_EXTENSION; } } ).length;
-            rm.memory.sources = rm.find( FIND_SOURCES ).length;
+            if ( lk[i].carry.energy < lk[i].carryCapacity /*- lk[i].getActiveBodyparts( WORK ) - 1*/ && ( lk[i].memory.role == 'sup' || lk[i].getActiveBodyparts( WORK ) > 0 ) && lk[i].memory.wantEnergy && lk[i].memory.role != 'harv' && ( lk[i].memory.role != 'miner' || ( lk[i].memory.role == 'miner' && lk[i].memory.accum ) ) ) rm.memory.ne[ rm.memory.ne.length ] = lk[i].id;
         }
 
         totalSources = totalSources + rm.memory.sources;
@@ -270,21 +313,8 @@ function rR() {
         rm.memory.linkBeam = false;
         rm.memory.gridlockBreaker = true;
 
-        /*        
-        if ( rm.memory.storedEnergy == 0 && Game.time / roomDiv == Math.floor( Game.time / roomDiv ) && rm.find( FIND_MY_CREEPS, { filter: function(object) { return ( object.memory.role != 'miner' && object.getActiveBodyparts( WORK ) > 1 ); } } ).length == 0 ) {
-            var rep = rm.find( FIND_CONSTRUCTION_SITES, { filter: function(object) { return object.owner.username == 'Vision'; } } );
-            for ( var i = 0; i < rep.length; i++ ) {
-                ruralSites[ruralSites.length] = rep[i];
-            }
-            rep = rm.find( FIND_STRUCTURES, { filter: function(object) { return object.structureType == STRUCTURE_ROAD && object.hits < object.hitsMax / 4; } } );
-            for ( var i = 0; i < rep.length; i++ ) {
-                ruralSites[ruralSites.length] = rep[i];
-            }
-        }
-        */
-
         // Report previous cpu trouble spots
-        if ( rm.memory.cpuUse && rm.memory.cpuUse > 75 ) console.log( Game.time + ': ' + rm.name + ' used ' + Math.floor( rm.memory.cpuUse ) );
+        if ( rm.memory.cpuUse && rm.memory.cpuUse > 50 ) console.log( Game.time + ': ' + rm.name + ' used ' + Math.floor( rm.memory.cpuUse ) );
         rm.memory.cpuUse = 0;
         if ( rm.storage ) rm.memory.tempStorageLimit = 600; else rm.memory.tempStorageLimit = tempStorageLimit;
         if ( Game.time / 3 == Math.floor( Game.time / 3) ) rm.memory.noExtNeed = false;
@@ -323,7 +353,11 @@ function rS() {
             // if ( exe < ex / 2 && friends.length > 4 ) { console.log( spawner.name + ' ' + exe + '/' + ex ); continue; }
             var sites = spawner.room.find( FIND_CONSTRUCTION_SITES );
             var rampartlevel = spawner.room.controller.level * spawner.room.controller.level * rampartMult;
+            if ( rampartlevel < 5000 ) rampartlevel = 5000;
     	    var repairSites = spawner.room.find( FIND_STRUCTURES, { filter: function(object) { return object.structureType != STRUCTURE_WALL && object.hits < object.hitsMax / 2 && object.hits < rampartlevel / 2; } } );
+    	    var infrastructureSupport = false;
+    	    for ( var i = 0; !infrastructureSupport && i < allCo.length; i++ ) { if ( Game.getObjectById( allCo[i] ) && orange( spawner, Game.getObjectById( allCo[i] ) ) < 128 ) infrastructureSupport = true; }
+    	    for ( var i = 0; !infrastructureSupport && i < allHre.length; i++ ) { if ( Game.getObjectById( allHre[i] ) && orange( spawner, Game.getObjectById( allHre[i] ) ) < 128 ) infrastructureSupport = true; }
 
             spawner.memory.friends = 0;
             spawner.memory.military = 0;
@@ -351,8 +385,7 @@ function rS() {
             
             // Are my miners operational?
             var minersGood = true;
-            // for ( var i = 0; i < 12; i++ ) { if ( Game.flags['m'+i+suf] && Game.creeps['m'+i+suf] === undefined && Game.creeps['m'+i+suf+'bu'] === undefined ) minersGood = false; }
-    
+
             // Try for big but adjust if needed
             var eex = ex;
             if ( spawner.memory.spawnLag > 5 || friends < 3 ) eex = exe;
@@ -363,11 +396,12 @@ function rS() {
             var rr = []; addPart(rr,WORK,17); addPart(rr,MOVE,18); addPart(rr,HEAL,1); 
             var rrh = []; addPart(rrh,WORK,32); addPart(rrh,MOVE,17); addPart(rrh,HEAL,1); 
             var w = [];  if ( ex < 91 ) { addPart(w,WORK,2+Math.floor(ex/2)-Math.floor(ex/5)); addPart(w,CARRY,1+Math.floor(ex/24)); addPart(w,MOVE,1+Math.floor(ex/21)); } else { addPart(w,WORK,44); addPart(w,CARRY,3); addPart(w,MOVE,3); }  
-            var hw = []; if ( ex < 60 ) { addPart(hw,WORK,1+Math.floor(ex/8)); addPart(hw,CARRY,3+Math.floor(ex/2)); addPart(hw,MOVE,1+Math.floor(ex/4)); } else { addPart(hw,WORK,10); addPart(hw,CARRY,30); addPart(hw,MOVE,10); }
-            var sw = []; addPart(sw,WORK,4); addPart(sw,CARRY,20); addPart(sw,MOVE,4);
+            var hw = []; if ( ex < 60 ) { addPart(hw,WORK,1+Math.floor(ex/8)); addPart(hw,CARRY,3+Math.floor(ex/2)); addPart(hw,MOVE,1+Math.floor(ex/4)); } else { addPart(hw,WORK,20); addPart(hw,CARRY,20); addPart(hw,MOVE,10); }
+            var sw = []; if ( ex < 60 ) { addPart(sw,WORK,1+Math.floor(ex/4)); addPart(sw,CARRY,1+Math.floor(ex/4)); addPart(sw,MOVE,1+Math.floor(ex/4)); } else { addPart(sw,WORK,16); addPart(sw,CARRY,16); addPart(sw,MOVE,16); }
             var rw = []; if ( ex < 50 ) { addPart(rw,WORK,1+Math.floor(ex/3)); addPart(rw,CARRY,1); addPart(rw,MOVE,2+Math.floor(ex/3)); } else { addPart(rw,WORK,22); addPart(rw,CARRY,3); addPart(rw,MOVE,25); }
             var c = [];  if ( ex < 45 ) { addPart(c,CARRY,3+Math.floor(ex/2)); addPart(c,MOVE,3+Math.floor(ex/2)); } else { addPart(c,CARRY,25); addPart(c,MOVE,25); }
-            var cc = []; if ( exe < 45 ) { addPart(cc,CARRY,4+Math.floor(exe/3)*2); addPart(cc,MOVE,2+Math.floor(exe/3)); } else { addPart(cc,CARRY,32); addPart(cc,MOVE,16); }
+            var cc = []; if ( exe < 45 ) { addPart(cc,CARRY,4+Math.floor(exe/3)*2); addPart(cc,MOVE,2+Math.floor(exe/3)); } else { addPart(cc,CARRY,33); addPart(cc,MOVE,17); }
+            var cch = []; if ( exe < 45 ) { addPart(cch,CARRY,4+Math.floor(exe/3)*2); addPart(cch,MOVE,2+Math.floor(exe/3)); } else { addPart(cch,CARRY,32); addPart(cch,MOVE,17); addPart(cch,HEAL,1); }
             var wc = []; if ( exe < 45 ) { addPart(wc,CARRY,4+Math.floor(exe/3)*2); addPart(wc,MOVE,2+Math.floor(exe/3)); } else { addPart(wc,CARRY,32); addPart(wc,MOVE,16); }
             var lc = []; if ( exe < 45 ) { addPart(lc,CARRY,2+Math.floor(Math.floor(exe/2))); addPart(lc,MOVE,2+Math.floor(exe/2)); } else { addPart(lc,CARRY,25); addPart(lc,MOVE,25);  }
             var s = [];  addPart(s,CARRY,5); addPart(s,MOVE,1); if ( eex > 4 ) addPart(s,CARRY,5); if ( eex > 9 ) addPart(s,CARRY,5); if ( eex > 14 ) addPart(s,CARRY,5); if ( eex > 19 ) addPart(s,CARRY,5); if ( eex > 24 ) addPart(s,CARRY,5);
@@ -398,7 +432,7 @@ function rS() {
             var hxh = []; addPart(hxh,MOVE,15); addPart(hxh,HEAL,15); 
             
             // Anti-Seeker
-            var axhh = []; addPart(axhh,MOVE,12); addPart(axhh,RANGED_ATTACK,16); addPart(axhh,HEAL,8); addPart(axhh,MOVE,1);
+            var axhh = []; addPart(axhh,MOVE,12); addPart(axhh,RANGED_ATTACK,18); addPart(axhh,HEAL,8); addPart(axhh,MOVE,1);
             
             // Base Military Units
             var g = []; if ( exe < 15 ) { addPart(g,TOUGH,4+Math.floor(exe/3)*2); addPart(g,ATTACK,2+Math.floor(exe/3)); addPart(g,MOVE,2+Math.floor(exe/3)); }
@@ -425,33 +459,22 @@ function rS() {
                 for ( var i = 0; i < 12; i++ ) {
                     if ( Game.flags['m'+i+suf] && !Game.flags['m'+i+suf].memory.dist ) Game.flags['m'+i+suf].memory.dist = 15;
                     if ( Game.flags['m'+i+suf] && ( Game.creeps['m'+i+suf] !== undefined || Game.creeps['m'+i+suf+'bu'] !== undefined ) && Game.flags['m'+i+suf].memory.dist )  {
-                        var sameRoom = true;
                         if ( spawner.room == Game.flags['m'+i+suf].room ) sameRoom = true;
                         var mineDist = Game.flags['m'+i+suf].memory.dist;
                         var maxCarry = Math.floor( ex / 2 + 3 );
-                        // if ( maxCarry > 20 && sameRoom ) maxCarry = 20;
-                        // if ( maxCarry > 15 && !sameRoom ) maxCarry = 15;
-                        if ( maxCarry > 32 && sameRoom ) maxCarry = 32;
-                        if ( maxCarry > 25 && !sameRoom ) maxCarry = 25;
+                        if ( maxCarry > 32 ) maxCarry = 32;
                         var needCarry = Math.floor( mineDist / 2.2 );
-                        var helpers = 1;
-                        var eachCarry = needCarry;
-                        if ( needCarry > maxCarry ) {
-                            // helpers = Math.floor( needCarry / maxCarry ) + 1;
-                            // eachCarry = Math.floor( needCarry / helpers );
-                            helpers = Math.floor( needCarry / maxCarry );
-                            eachCarry = maxCarry;
-                        }
-                        if ( eachCarry < 3 ) eachCarry = 3;
-                        if ( sameRoom && eachCarry < 4 ) eachCarry = 4;
-                        var eachMove = eachCarry;
-                        if ( sameRoom ) eachMove = Math.floor( ( eachCarry + 1 ) / 2 );
-                        if ( Math.random() < .5 ) {
+                        var helpers = Math.floor( needCarry / maxCarry ) + 1;
+                        if ( helpers > maxHelpers ) helpers = maxHelpers;
+                        var eachCarry = Math.floor( needCarry / helpers );
+                        if ( eachCarry > maxCarry ) eachCarry = maxCarry;
+                        if ( eachCarry < 4 ) eachCarry = 4;
+                        var eachMove = Math.floor( ( eachCarry + 1 ) / 2 );
+                        if ( Math.random() < .001 ) {
                             var vc = [];  addPart(vc,WORK,1);  addPart(vc,CARRY,eachCarry);  addPart(vc,MOVE,eachMove+1);  // Create just the right bot for the mine...
                         } else {
                             var vc = [];  addPart(vc,CARRY,eachCarry);  addPart(vc,MOVE,eachMove);  // Create just the right bot for the mine...
                         }
-                        if ( helpers > 1 ) helpers = 1;
                         if ( mineDist < 5 ) helpers = 0;
                         for ( var aid = helpers - 1; aid > -1; aid-- ) {
                             if ( Game.time / ( aid * 3 + 1 ) == Math.floor( Game.time / ( aid * 3 + 1 ) ) ) {
@@ -530,22 +553,22 @@ function rS() {
                 // Military Creeps
                 for ( var i = 0; i < 16; i++ ) {
                     // Clear a source of energy, cost 15,000 per 1,500s
-                    if ( ( spawner.room.memory.storedEnergy > minBuild && ex > 100 ) && ( Game.flags['qm'+i] || Game.flags['oqm'+i] ) && Game.flags['qm'+i+'x'] === undefined ) {  
+                    if ( ( spawner.room.memory.storedEnergy > minBuild && ex > 100 ) && ( Game.flags['qm'+i] || Game.flags['oqm'+i] ) && Game.flags['qm'+i+'x'] === undefined && orange( spawner, Game.flags['oqm'+i] ) < 80 ) {  
                         var targetRoom = null;
                         if ( Game.flags['qm'+i] ) targetRoom = Game.flags['qm'+i].room;
                         if ( !targetRoom && Game.flags['oqm'+i] ) targetRoom = Game.flags['oqm'+i].room;
                         if ( targetRoom && targetRoom.memory.mil > 0 ) {
-                            for ( var ii = 3 + Math.floor( targetRoom ? targetRoom.memory.totalEnergy / 5000 : 0 ); ii > -1; ii-- ) { if ( targetRoom && targetRoom.memory.totalEnergy > 2000 && Game.creeps['c'+i+'qmc'+ii] === undefined && spawner.createCreep( c, 'c'+i+'qmc'+ii, { rally: 'qm'+i, role: 'harv' } ) === 0 ) continue; }
-                            for ( var ii = 0; ii < 2; ii++ ) {
-                                if ( Game.creeps['rr'+i+'qm'+ii+'bu'] === undefined || Game.creeps['rr'+i+'qm'+ii+'bu'].ticksToLive < 250 ) if ( Game.creeps['rr'+i+'qm'+ii] === undefined ) spawner.createCreep( rr, 'rr'+i+'qm'+ii, { rally: 'qm'+i, role: 'miner' } ); 
-                                if ( Game.creeps['rr'+i+'qm'+ii] && Game.creeps['rr'+i+'qm'+ii].ticksToLive < 250 ) if ( Game.creeps['rr'+i+'qm'+ii+'bu'] === undefined ) spawner.createCreep( rr, 'rr'+i+'qm'+ii+'bu', { rally: 'qm'+i, role: 'miner' } ); 
+                            for ( var ii = 2 + Math.floor( targetRoom ? targetRoom.memory.totalEnergy / 7500 : 0 ); ii > -1; ii-- ) { if ( targetRoom && targetRoom.memory.totalEnergy > 2000 && Game.creeps['c'+i+'qmc'+ii] === undefined && spawner.createCreep( cch, 'c'+i+'qmc'+ii, { rally: 'qm'+i, role: 'harv' } ) === 0 ) continue; }
+                            for ( var ii = 0; ii < 1; ii++ ) {
+                                if ( Game.creeps['rr'+i+'qm'+ii+'bu'] === undefined || Game.creeps['rr'+i+'qm'+ii+'bu'].ticksToLive < 250 ) if ( Game.creeps['rr'+i+'qm'+ii] === undefined ) spawner.createCreep( rrh, 'rr'+i+'qm'+ii, { rally: 'qm'+i, role: 'miner' } ); 
+                                if ( Game.creeps['rr'+i+'qm'+ii] && Game.creeps['rr'+i+'qm'+ii].ticksToLive < 250 ) if ( Game.creeps['rr'+i+'qm'+ii+'bu'] === undefined ) spawner.createCreep( rrh, 'rr'+i+'qm'+ii+'bu', { rally: 'qm'+i, role: 'miner' } ); 
                             }
                         }
                         if ( Game.creeps['a'+i+'qm1'] === undefined || Game.creeps['a'+i+'qm1'].ticksToLive < 300 ) {
-                            if ( Game.creeps['a'+i+'qm0'] === undefined ) if ( spawner.createCreep( axh, 'a'+i+'qm0',  { rally: 'qm'+i } ) === 0 ) continue;
+                            if ( Game.creeps['a'+i+'qm0'] === undefined ) if ( spawner.createCreep( axhh, 'a'+i+'qm0',  { rally: 'qm'+i } ) === 0 ) continue;
                         }
                         if ( Game.creeps['a'+i+'qm0'] !== undefined && Game.creeps['a'+i+'qm0'].ticksToLive < 300 ) {
-                            if ( Game.creeps['a'+i+'qm1'] === undefined ) if ( spawner.createCreep( axh, 'a'+i+'qm1', { rally: 'qm'+i } ) === 0 ) continue;
+                            if ( Game.creeps['a'+i+'qm1'] === undefined ) if ( spawner.createCreep( axhh, 'a'+i+'qm1', { rally: 'qm'+i } ) === 0 ) continue;
                         }
                     }
     
@@ -591,7 +614,8 @@ function rS() {
                     
                     if ( ( Game.flags['axh'+i]  || Game.flags['oaxh'+i] ) && Game.creeps['axh'+i]  === undefined )  { if ( spawner.createCreep( axh, 'axh'+i ) === 0 ) continue; }
                     if ( ( Game.flags['hxh'+i]  || Game.flags['ohxh'+i] ) && Game.creeps['hxh'+i]  === undefined )  { if ( spawner.createCreep( hxh, 'hxh'+i ) === 0 ) continue; }
-                    if ( ( Game.flags['x'+i]  || Game.flags['ox'+i] ) && Game.creeps['x'+i]  === undefined && spawner.room.memory.storedEnergy > minBuild )  { if ( spawner.createCreep( x, 'x'+i ) === 0 ) continue; }
+                    if ( ( Game.flags['x'+i+suf]  || Game.flags['ox'+i+suf] ) && Game.creeps['x'+i+suf]  === undefined && spawner.room.memory.storedEnergy > minBuild )  { if ( spawner.createCreep( x, 'x'+i+suf ) === 0 ) continue; }
+                    if ( ( Game.flags['y'+i+suf]  || Game.flags['oy'+i+suf] ) && Game.creeps['y'+i+suf]  === undefined && spawner.room.memory.storedEnergy > minBuild )  { if ( spawner.createCreep( axh, 'y'+i+suf ) === 0 ) continue; }
                     if ( ( Game.flags['xh'+i+suf]  || Game.flags['oxh'+i+suf] ) && Game.creeps['xh'+i+suf]  === undefined )  { if ( spawner.createCreep( xh, 'xh'+i+suf ) === 0 ) continue; }
                     if ( ( Game.flags['xr'+i+suf]  || Game.flags['oxr'+i+suf] ) && Game.creeps['xr'+i+suf]  === undefined )  { if ( spawner.createCreep( xr, 'xr'+i+suf ) === 0 ) continue; }
                     if ( ( Game.flags['g'+i+suf]  || Game.flags['og'+i+suf] ) && Game.creeps['g'+i+suf]  === undefined )  { if ( spawner.createCreep( g, 'g'+i+suf, { rally: 'army'+suf } ) === 0 ) continue; }
@@ -616,11 +640,11 @@ function rS() {
             // High Priority Creeps
             var hwrole = 'sup';
             if ( !minersGood ) hwrole = 'harv';
-            if ( spawner.memory.friends > 4 ) {
+            if ( spawner.memory.friends > 4 && infrastructureSupport ) {
                 if ( Game.creeps['chw'+spawner.room.name] === undefined && spawner.createCreep( cc, 'chw'+spawner.room.name, { role: 'sup', target: 'hw'+spawner.room.name } ) === 0 ) continue;
-                if ( Game.creeps['hw'+spawner.room.name] === undefined && spawner.createCreep( hw, 'hw'+spawner.room.name, { role: hwrole } ) === 0 ) continue;
+                if ( Game.creeps['hw'+spawner.room.name] === undefined && spawner.createCreep( sw, 'hw'+spawner.room.name, { role: hwrole } ) === 0 ) continue;
             }
-            if ( ( Game.flags['hw'+suf] || repairSites.length > 12 || sites.length > 8 ) && totalStored > 2000000 ) {
+            if ( ( Game.flags['hw'+suf] || spawner.room.memory.hre.length > 36 || spawner.room.memory.co.length > 24 ) && totalStored > 2000000 && 1 == 2 ) {
                 if ( Game.creeps['chw'+suf] === undefined && spawner.createCreep( cc, 'chw'+suf, { role: 'sup', target: 'hw'+suf } ) === 0 ) continue;
                 if ( Game.creeps['hw'+suf] === undefined && spawner.createCreep( hw, 'hw'+suf, { role: hwrole } ) === 0 ) continue;
             }
@@ -630,7 +654,7 @@ function rS() {
             }
             for ( var i = 0; i < 12; i++ ) {
                 if ( ( Game.flags['w'+i+suf] || Game.flags['ow'+i+suf] ) && Game.creeps['w'+i+suf]  === undefined ) if ( spawner.createCreep( w, 'w'+i+suf, { role: 'worker' } ) === 0 ) continue;
-                if ( ( Game.flags['sw'+i+suf] || Game.flags['osw'+i+suf] ) && Game.creeps['sw'+i+suf]  === undefined ) if ( spawner.createCreep( sw, 'sw'+i+suf, { role: 'worker', rally: 'sw'+i+suf } ) === 0 ) continue;
+                if ( Game.flags['osw'+i+suf] && Game.creeps['sw'+i+suf]  === undefined && ( Game.flags['osw'+i+suf].room.memory.hre.length > 0 || Game.flags['osw'+i+suf].room.memory.co.length > 0 ) ) if ( spawner.createCreep( sw, 'sw'+i+suf, { role: 'worker', rally: 'sw'+i+suf } ) === 0 ) continue;
                 if ( ( Game.flags['v'+i+suf] || Game.flags['ov'+i+suf] ) && Game.creeps['v'+i+suf]  === undefined && spawner.room.memory.storedEnergy > 750000 + i * 50000 ) if ( spawner.createCreep( w, 'v'+i+suf, { role: 'worker' } ) === 0 ) continue;
                 if ( Game.flags['ovc'+i+suf] && Game.creeps['v'+i+suf] && Game.creeps['vc'+i+suf] === undefined ) if ( spawner.createCreep( cc, 'vc'+i+suf, { role: 'sup', noExt: true } ) === 0 ) continue;
                 if ( Game.flags['lw'+i+suf]  || Game.flags['olw'+i+suf] ) if ( spawner.createCreep( lw, 'lw'+i+suf, { role: 'worker' } ) === 0 ) continue;
@@ -692,7 +716,7 @@ function rC() {
     	if ( creep.memory.mine !== undefined && creep.memory.role != 'harv' && creep.pos.inRangeTo( Game.getObjectById( creep.memory.mine ), 1 ) ) { creep.harvest( Game.getObjectById( creep.memory.mine ) ); logCpu( creep ); continue; } else creep.memory.mine = undefined;
 
         // Identify Military Units
-    	if ( creep.getActiveBodyparts( ATTACK ) || creep.getActiveBodyparts( RANGED_ATTACK ) || creep.getActiveBodyparts( HEAL ) ) { creep.memory.mil = true; creep.room.memory.mil = 1; } else creep.memory.mil = false;
+    	if ( creep.getActiveBodyparts( ATTACK ) || creep.getActiveBodyparts( RANGED_ATTACK ) || creep.getActiveBodyparts( HEAL ) > 1 ) { creep.memory.mil = true; creep.room.memory.mil = 1; } else creep.memory.mil = false;
     	
         // Skips bots under constructions, report military creeps
     	if ( creep.spawning ) {
@@ -716,9 +740,9 @@ function rC() {
     	if ( creep.memory.role == 'trans' && Game.flags['o'+creep.memory.rally] && Game.flags['o'+creep.memory.rally].room == creep.room ) creep.memory.wantEnergy = false;
     	if ( creep.memory.role == 'worker' && Game.flags['o'+creep.name] && Game.flags['o'+creep.name].room != creep.room ) creep.memory.wantEnergy = false;
 
-        if ( ( creep.pos.x == 49 || creep.pos.x == 0 || creep.pos.y == 49 || creep.pos.y == 0 ) && creep.pos.findInRange( FIND_MY_CREEPS, 1 ).length > 1 ) {
-            if ( creep.room.memory.gridlockBeaker ) creep.room.memory.gridlockBreaker = false; else m( creep, creep );
-        }
+        // if ( ( creep.pos.x == 49 || creep.pos.x == 0 || creep.pos.y == 49 || creep.pos.y == 0 ) && creep.pos.findInRange( FIND_MY_CREEPS, 1 ).length > 1 ) {
+            // if ( creep.room.memory.gridlockBeaker ) creep.room.memory.gridlockBreaker = false; else m( creep, creep );
+        // }
 
     	rSlow( creep.name + ' Hostile calcs' );
         // Hostile Creeps
@@ -736,7 +760,7 @@ function rC() {
     	rSlow( creep.name + ' Base calcs' );
     	
     	// Base Calculations
-    	if ( creep.memory.saveBase || creep.ticksToLive / 60 == Math.floor( creep.ticksToLive / 60 ) || !Game.getObjectById( creep.memory.saveBase ) ) {
+    	if ( !creep.memory.saveBase || !Game.getObjectById( creep.memory.saveBase ) ) {
     	    var base = null;
         	if ( creep.room.storage !== undefined && creep.room.storage.owner.username == 'Vision' && creep.room.storage.store.energy < storageLevel ) { base = creep.room.storage;  }
         	// if ( !base ) base = creep.pos.findClosestByRange( FIND_MY_SPAWNS );
@@ -756,11 +780,12 @@ function rC() {
         
         var rampartlevel = 5000;
         if ( base.room ) rampartlevel = base.room.controller.level * base.room.controller.level * rampartMult;
+        if ( rampartlevel < 5000 ) rampartlevel = 5000;
 
     	rSlow( creep.name + ' Unit calcs' );
         // Unit Calculations
         var interval = creep.memory.spr - 2;
-        if ( interval > 30 ) interval = 30;
+        if ( interval > 50 ) interval = 50;
         if ( interval < 4 ) interval = 4;
         if ( creep.memory.spr < 4 || creep.ticksToLive / interval == Math.floor( creep.ticksToLive / interval ) ) {
     	    var nearestSpawner = creep.pos.findClosestByRange( FIND_MY_SPAWNS );
@@ -770,10 +795,9 @@ function rC() {
     	if ( hostiles > 0 ) var nearestEnemy = creep.pos.findClosestByRange( FIND_HOSTILE_CREEPS, { filter: function(object) { return object.hitsMax < maxHostile && ( object.getActiveBodyparts( ATTACK ) || object.getActiveBodyparts( RANGED_ATTACK ) ) && allies.indexOf( object.owner.username ) < 0;  } } ); else var nearestEnemy = null;
     	if ( nearestEnemy ) creep.memory.er = range( creep.pos.x, creep.pos.y, nearestEnemy.pos.x, nearestEnemy.pos.y ); else creep.memory.er = 99;
     	
-        if ( creep.room.memory.links > 0 ) {
+        if ( creep.room.memory.li && creep.room.memory.li.length > 0 ) {
             var link = null, maxR = 99;
             for ( var i = 0; i < creep.room.memory.li.length; i++ ) { if ( creep.pos.inRangeTo( Game.getObjectById( creep.room.memory.li[i] ), 1 ) && Game.getObjectById( creep.room.memory.li[i] ).energy > 0 ) { link = Game.getObjectById( creep.room.memory.li[i] ); break; } }
-    	    // var link = creep.pos.findClosestByRange( FIND_MY_STRUCTURES, { filter: function(object) { return object.structureType == STRUCTURE_LINK && object.pos.inRangeTo( creep, 1 ) && object.energy > 0; } } );
         } else link = null;
 	    if ( link ) creep.memory.linked = true; else creep.memory.linked = false;
 
@@ -900,11 +924,21 @@ function rC() {
     	rSlow( creep.name + ' Work calcs' );
         // Work if possible
         if ( creep.getActiveBodyparts(WORK) > 0 ) {
-            if ( creep.memory.role == 'harv' ) var source = []; else var source = creep.pos.findInRange( FIND_SOURCES, 1 );
-            if ( source.length > 0 && source[0].energy > 0 && creep.memory.role != 'harv' ) { 
-                creep.harvest( source[0] ); 
+            var source = null;
+            if ( creep.memory.role != 'harv' ) {
+                // Cache
+                if ( creep.memory.sourceCache && orange( creep, Game.getObjectById( creep.memory.sourceCache ) ) < 2 ) source = Game.getObjectById( creep.memory.sourceCache ); else {
+                    creep.memory.sourceCache = null;
+                    for ( var i = 0; i < rm.so.length; i++ ) {
+                        var src = Game.getObjectById( rm.so[i] );
+                        if ( orange( creep, src ) < 2 ) { source = src; creep.memory.sourceCache = source.id; break; }
+                    } 
+                }
+            }
+            if ( source && source.energy > 0 && creep.memory.role != 'harv' ) { 
+                creep.harvest( source ); 
                 creep.memory.gridlock = 0; 
-        	    if ( creep.getActiveBodyparts( WORK ) < 8 && ( Game.flags[creep.name] && Game.flags[creep.name].pos.inRangeTo(creep,0) || Game.flags[creep.memory.rally] && Game.flags[creep.memory.rally].pos.inRangeTo(creep,0) ) ) creep.memory.mine = source[0].id; else creep.memory.mine = undefined;
+        	    if ( creep.getActiveBodyparts( WORK ) < 8 && ( Game.flags[creep.name] && Game.flags[creep.name].pos.inRangeTo(creep,0) || Game.flags[creep.memory.rally] && Game.flags[creep.memory.rally].pos.inRangeTo(creep,0) ) ) creep.memory.mine = source.id; else creep.memory.mine = undefined;
             } else {
                 if ( creep.carry.energy > 0 ) {
                     if ( creep.memory.role != 'harv' && creep.carry.energy > creep.getActiveBodyparts( WORK ) * 1.5 ) {
@@ -917,29 +951,45 @@ function rC() {
 
                     // Construct?
                     var target = null;
-                    if ( rm.co.length > 0 ) for( var i = 0; i < rm.co.length; i++ ) { if ( creep.pos.inRangeTo( Game.getObjectById( rm.co[i] ), 1 ) ) { target = Game.getObjectById( rm.co[i] ); break; } } else target = null;
+                    if ( creep.memory.buildCache && Game.getObjectById( creep.memory.buildCache ) && orange( creep, Game.getObjectById( creep.memory.buildCache ) ) < 2 ) target = Game.getObjectById( creep.memory.buildCache ); else {
+                        creep.memory.buildCache = null;
+                        if ( rm.co.length > 0 ) for( var i = 0; i < rm.co.length; i++ ) { if ( creep.pos.inRangeTo( Game.getObjectById( rm.co[i] ), 1 ) && ( Game.getObjectById( rm.co[i] ).structureType == STRUCTURE_ROAD || creep.memory.role != 'harv' ) ) { target = Game.getObjectById( rm.co[i] ); creep.memory.buildCache = rm.co[i]; break; } } else target = null;
+                    }
             	    if( target && ( !creep.pos.inRangeTo( target, 0 ) || target.structureType == STRUCTURE_ROAD ) ) { 
+            	        creep.memory.buildCache = target.id;
             	        creep.build( target );
             	        if ( creep.hits == creep.hitsMax && ( creep.getActiveBodyparts( WORK ) > 1 || creep.pos.findInRange( FIND_MY_CREEPS, 2, { filter: function(object) { return object.memory.role != 'miner'; } } ).length < 2 ) ) m( creep, creep ); 
             	        creep.memory.gridlock = 0;
             	   } else {
                 	    // Repair?
-            	    	// target = creep.pos.findInRange(FIND_STRUCTURES, 1, { filter: function(object) { return object.structureType != STRUCTURE_WALL && object.hits < object.hitsMax && object.hits < rampartlevel; } } );
                         if ( rm.re.length > 0 ) {
-        	                var wellOff = 99999999;
-                            for( var i = 0; i < rm.re.length; i++ ) {
-                                var rep = Game.getObjectById( rm.re[i] );
-                                if ( creep.pos.inRangeTo( rep, 1 ) && rep.hits < wellOff ) { target = rep; wellOff = rep.hits; }
-                            } 
+                            if ( creep.memory.repairCache &&
+                                 Game.getObjectById( creep.memory.repairCache ) && 
+                                 orange( creep, Game.getObjectById( creep.memory.repairCache ) ) < 2 && 
+                                 Game.getObjectById( creep.memory.repairCache ).hits < Game.getObjectById( creep.memory.repairCache ).hitsMax && 
+                                 Game.getObjectById( creep.memory.repairCache ).hits < rampartlevel * 1.2 && 
+                                 creep.ticksToLive / 36 != Math.floor( creep.ticksToLive / 36 ) )
+                            {
+                                target = Game.getObjectById( creep.memory.repairCache );
+                            }
+                            else
+                            {
+                                creep.memory.repairCache = null;
+            	                var wellOff = rampartlevel * 1.2;
+                                for( var i = 0; i < rm.re.length; i++ ) {
+                                    var rep = Game.getObjectById( rm.re[i] );
+                                    if ( rep && creep.pos.inRangeTo( rep, 1 ) && rep.hits < wellOff && ( rep.structureType == STRUCTURE_ROAD || creep.memory.role != 'harv' ) ) { target = rep; creep.memory.repairCache = target.id; wellOff = rep.hits; }
+                                } 
+                            }
                         }
-            	    	if ( target && creep.getActiveBodyparts( WORK ) > 1 ) { m( creep, creep ); creep.memory.gridlock = 0; } 
-        	            if( target ) {
+            	    	if ( target && ( creep.getActiveBodyparts( WORK ) > 1 || target.structureType == STRUCTURE_ROAD ) && target.hits < rampartlevel * 1.2 && target.hits < target.hitsMax ) { m( creep, creep ); creep.memory.gridlock = 0; } 
+        	            if ( target ) {
         	                creep.repair( target );
         	                creep.memory.gridlock = 0;
         	            } else {
                 	        // Upgrade Controller?
                 	        target = creep.room.controller;
-                    	    if( target && creep.pos.inRangeTo( target, 1 ) ) { creep.upgradeController( target ); creep.memory.gridlock = 0; if ( creep.getActiveBodyparts( WORK ) > creep.getActiveBodyparts( MOVE ) ) m( creep, creep ); }
+                    	    if( target && creep.pos.inRangeTo( target, 1 ) ) { creep.upgradeController( target ); creep.memory.gridlock = 0; if ( creep.getActiveBodyparts( WORK ) > creep.getActiveBodyparts( CARRY ) ) m( creep, creep ); }
                 	    }
             	    }
                 } 
@@ -997,26 +1047,28 @@ function rC() {
             }
 
             if ( !source ) {
-                /*
-        	    if ( creep.memory.role == 'miner' || creep.memory.role == 'harv' || ( creep.memory.role == 'trans' && Game.flags['o'+creep.memory.rally] && Game.flags['o'+creep.memory.rally].room == creep.room ) || !creep.memory.role || creep.memory.tt || ( creep.memory.role == 'sup' && creep.getActiveBodyparts( WORK ) == 0 ) ) { 
-        	        var need = 0;
-                    for ( var i = 0; i < creep.room.memory.ne.length; i++ ) {
-                        var needy = Game.getObjectById( creep.room.memory.ne[i] ), needThis = 0;
-                        if ( needy.energy ) needThis = 300 - needy.energy; else if ( needy.carry ) needThis = needy.carryCapacity - needy.carry.energy;
-                        if ( needy.pos.inRangeTo( creep , 1 ) && needThis > need ) { source = needy; need = needThis; }
-                    }
-        	    } */
-                
         	    if ( creep.memory.role == 'miner' || creep.memory.role == 'harv' || ( creep.memory.role == 'trans' && Game.flags['o'+creep.memory.rally] && Game.flags['o'+creep.memory.rally].room == creep.room ) || !creep.memory.role || creep.memory.tt ) { 
         	        if ( creep.memory.spr < 2 ) source = creep.pos.findClosestByRange( FIND_MY_SPAWNS, { filter: function(object) { return object.energy < 300 && object.pos.inRangeTo( creep, 1 ); } } ); else source = null;
         	        if ( !source && creep.room.storage && creep.pos.inRangeTo( creep.room.storage, 1) ) source = creep.room.storage;
+        	        /*
+        	        if ( typeof adjCreeps === 'undefined' ) {
+        	            adjCreeps = creep.pos.findInRange( FIND_MY_CREEPS, 1 );
+        	        }
+        	        if ( adjCreeps && adjCreeps.length > 0 ) {
+            	        for ( var i = 0; i < adjCreeps.length; i++ ) {
+            	            var adj = adjCreeps[i];
+            	            if ( adj.id ) {
+                	            if ( adj.memory.role == 'storage' && ( Math.abs( adj.memory.storedEnergy ) < creep.room.memory.tempStorageLimit || !creep.room.storage ) && !link ) { source = adj; break; }
+                	            if ( ( ( adj.memory.target && adj.memory.target == creep.name ) || adj.memory.role == 'sup' || adj.getActiveBodyparts( WORK ) > 0 ) && creep.memory.wantEnergy && adj.memory.role != 'harv' && ( adj.memory.role != 'miner' || ( creep.memory.role == 'miner' && adj.memory.accum ) )  ) { source = adj; break; }
+                	            if ( creep.memory.role != 'harv' && adj.carry.energy < object.carryCapacity && adj.memory.share !== undefined && !adj.memory.endpoint ) { source = adj; break; }
+            	            }
+            	        }
+        	        }
+        	        */
         	        if ( !source ) source = creep.pos.findClosestByRange( FIND_MY_CREEPS, { filter: function(object) { return object.memory.role == 'storage' && ( Math.abs(object.memory.storedEnergy) < creep.room.memory.tempStorageLimit || !creep.room.storage ) && object.pos.inRangeTo( creep, 1) && object != creep && !link; } } );
         	        if ( !source ) source = creep.pos.findClosestByRange( FIND_MY_CREEPS, { filter: function(object) { return ( ( object.memory.target && object.memory.target == creep.name ) || object.memory.role == 'sup' || object.getActiveBodyparts( WORK ) > 0 ) && object.pos.inRangeTo( creep, 1) && object != creep && creep.memory.wantEnergy && object.memory.role != 'harv' && ( object.memory.role != 'miner' || ( creep.memory.role == 'miner' && object.memory.accum ) ) ; } } );
         	        if ( !source ) {
-                	    var storage = Game.creeps['s'+suf], slider = null;
-            	        if ( base ) source = base; 
-            	        if ( source.energy == 300 && storage && creep.room.storage && storage.pos.inRangeTo( creep.room.storage, 1 ) ) source = storage;
-            	        if ( creep.room.storage && creep.room.storage.pos.inRangeTo( creep, 1) ) source = creep.room.storage;
+        	            var slider = null;
             	        if ( creep.memory.role != 'harv' ) slider = creep.pos.findClosestByRange( FIND_MY_CREEPS, { filter: function(object) { return object.pos.inRangeTo( creep, 1) && object.carry.energy < object.carryCapacity && object.memory.share !== undefined && !object.memory.endpoint; } } );
             	        if ( slider ) source = slider;
         	        }
@@ -1029,7 +1081,8 @@ function rC() {
                             if ( sources[i].carry.energy < need ) { need = sources[i].carry.energy; source = sources[i]; }
                         }
                     }
-        	    }
+        	    } 
+        	    
             }
             
     	    if ( source && source.pos && source.pos.inRangeTo( creep, 1 ) ) { 
@@ -1160,35 +1213,59 @@ function rC() {
     	rSlow( creep.name + ' Builder Movement' );
     	// Builders
     	if ( creep.fatigue == 0 && !creep.memory.moveOrder && creep.getActiveBodyparts( WORK ) > 0 && creep.memory.role != 'harv' && creep.getActiveBodyparts( CARRY ) > 0 ) { 
-    	    var myCenter = null;
+    	    var myCenter = null, myCenterRange = 99;
+    	    if ( !myCenter && Game.flags[creep.memory.spawn] ) { myCenter = Game.flags[creep.memory.spawn]; myCenterRange = 25; }
     	    if ( !myCenter ) myCenter = Game.spawns[creep.memory.spawn];
     	    if ( myCenter.room != creep.room ) myCenter = creep;
+    	    if ( !creep.memory.lookRange ) creep.memory.lookRange = 8;
 
-            var source = null;
+            var source = null, maxR = creep.memory.lookRange;
+            if ( rm.hpre.length > 0 ) {
+                for( var i = 0; i < rm.hpre.length; i++ ) { if ( orange( creep, Game.getObjectById( rm.hpre[i] ) ) < maxR && orange( creep, Game.getObjectById( rm.hpre[i] ) ) < myCenterRange ) { source = Game.getObjectById( rm.hpre[i] ); maxR = orange( creep, Game.getObjectById( rm.hpre[i] ) ); } } 
+            }
             if ( rm.co.length > 0 ) {
-                var maxR = 99;
-                for( var i = 0; i < rm.co.length; i++ ) { if ( orange( myCenter, Game.getObjectById( rm.co[i] ) ) < maxR ) { source = Game.getObjectById( rm.co[i] ); maxR = orange( myCenter, Game.getObjectById( rm.co[i] ) ); } } 
+                for( var i = 0; i < rm.co.length; i++ ) { if ( orange( creep, Game.getObjectById( rm.co[i] ) ) < maxR && orange( creep, Game.getObjectById( rm.co[i] ) ) < myCenterRange ) { source = Game.getObjectById( rm.co[i] ); maxR = orange( creep, Game.getObjectById( rm.co[i] ) ); } } 
             }
-            var target = null;
-            if ( rm.hre.length > 0 ) {
-                var maxR = 99;
-                for( var i = 0; i < rm.hre.length; i++ ) { if ( orange( creep, Game.getObjectById( rm.hre[i] ) ) < maxR ) { target = Game.getObjectById( rm.hre[i] ); maxR = orange( creep, Game.getObjectById( rm.hre[i] ) ); } } 
+            if ( !source && rm.hre.length > 0 ) {
+                maxR = creep.memory.lookRange;
+                for( var i = 0; i < rm.hre.length; i++ ) { if ( orange( creep, Game.getObjectById( rm.hre[i] ) ) < maxR && orange( creep, Game.getObjectById( rm.hre[i] ) ) < myCenterRange ) { source = Game.getObjectById( rm.hre[i] ); maxR = orange( creep, Game.getObjectById( rm.hre[i] ) ); } } 
             }
-            if ( target && ( !source || orange( creep, target ) < orange( creep, source ) ) ) source = target;
+            if ( maxR + 1 < creep.memory.lookRange ) creep.memory.lookRange = maxR + 1;
+            if ( creep.memory.lookRange < 8 ) creep.memory.lookRange = 8;
     	    if ( !source ) {
-    	        var maxR = 32;
+    	        if ( creep.memory.lookRange < 128 ) creep.memory.lookRange = creep.memory.lookRange + 8;
+    	        maxR = creep.memory.lookRange;
                 for ( var i = 0; i < creep.room.memory.ex.length; i++ ) {
                     var thisExt = Game.getObjectById(creep.room.memory.ex[i]);
-                    if ( orange( creep, thisExt ) < maxR ) { maxR = orange( creep, thisExt ); source = thisExt; }
+                    if ( orange( creep, thisExt ) < maxR && orange( creep, thisExt ) < myCenterRange ) { maxR = orange( creep, thisExt ); source = thisExt; }
                 }
+    	    }
+    	    if ( creep.memory.lookRange > 50 ) {
+    	        if ( creep.memory.rememberTarget && Game.getObjectById( creep.memory.rememberTarget ) && creep.ticksToLive / 30 != Math.floor( creep.ticksToLive / 30 ) && orange( creep, Game.getObjectById( creep.memory.rememberTarget ) ) > 5 ) source = Game.getObjectById( creep.memory.rememberTarget ); else {
+    	            creep.memory.rememberTarget = null;
+        	        maxR = creep.memory.lookRange;
+                    for ( var i = 0; i < allCo.length; i++ ) {
+                        var rep = Game.getObjectById( allCo[i] );
+                        if ( orange( creep, rep ) < maxR ) { maxR = orange( creep, rep ); source = rep; }
+                    }
+                    for ( var i = 0; i < allHre.length; i++ ) {
+                        var rep = Game.getObjectById( allHre[i] );
+                        if ( orange( creep, rep ) < maxR ) { maxR = orange( creep, rep ); source = rep; }
+                    }
+                    if ( source ) creep.memory.rememberTarget = source.id;
+    	        }
     	    }
     	    if ( !source ) {
                 if ( rm.re.length > 0 ) {
-                    var maxR = 99, rep = Game.getObjectById( rm.re[i] );
-                    for( var i = 0; i < rm.re.length; i++ ) { if ( orange( creep, rep ) < maxR && rep.hits < rep.hitsMax * .9 && rep.hits < rampartlevel * .9 ) { source = rep; maxR = orange( creep, rep ); } } 
+                    var maxR = creep.memory.lookRange, rep = Game.getObjectById( rm.re[i] );
+                    for( var i = 0; i < rm.re.length; i++ ) { if ( rep && orange( creep, rep ) < maxR && rep.hits < rep.hitsMax * .9 && rep.hits < rampartlevel * .9 ) { source = rep; maxR = orange( creep, rep ); } } 
                 }
     	    }
-    	    if ( source && creep.memory.er > 4 && ( creep.carry.energy > 0 || creep.memory.role != 'sup' ) ) if ( creep.pos.inRangeTo( source , 1 ) && creep.hits == creep.hitsMax && creep.memory.role != 'harv' ) { m( creep, creep); if ( !creep.memory.stayHere || creep.memory.stayHere == 0 ) creep.memory.stayHere = 6; } else m( creep, source );
+    	    if ( !source && Game.spawns[ creep.memory.spawn ] && Game.spawns[ creep.memory.spawn ].room != creep.room ) source = Game.spawns[ creep.memory.spawn ];
+
+    	    if ( source && creep.memory.er > 4 && ( creep.carry.energy > 0 || creep.memory.role != 'sup' ) ) {
+    	        if ( creep.pos.inRangeTo( source , 1 ) && creep.hits == creep.hitsMax && creep.memory.role != 'harv' ) { m( creep, creep); if ( !creep.memory.stayHere || creep.memory.stayHere == 0 ) creep.memory.stayHere = 6; } else m( creep, source );
+    	    }
     	    
     	    // Request more energy, if needed
     	    if ( creep.carry.energy < creep.carryCapacity / 4 && creep.memory.spr > 20 && Game.time / 5 == Math.floor( Game.time / 5 ) ) {
@@ -1199,19 +1276,22 @@ function rC() {
 
         creep.memory.usedCpu2 = Math.floor( ( Game.getUsedCpu() - startCpu ) * 100 ) / 100;
         // Build roads for better deliveries!
-        if ( creep.memory.role == 'harv' && creep.room.memory.sites < 4 && !roa( creep.room, creep.pos.x, creep.pos.y ) && creep.carry.energy > 300 && creep.getActiveBodyparts( WORK ) == 1 ) creep.room.createConstructionSite( creep.pos.x, creep.pos.y, STRUCTURE_ROAD );
+        if ( creep.memory.role == 'harv' && allCo.length < 60 && !roa( creep.room, creep.pos.x, creep.pos.y ) && creep.carry.energy > 300 ) creep.room.createConstructionSite( creep.pos.x, creep.pos.y, STRUCTURE_ROAD );
                 
         // Delivery   
     	if ( creep.fatigue == 0 && !creep.memory.moveOrder && !creep.memory.mil ) { 
         	rSlow( creep.name + ' Delivery Calcs' );
-    	    if ( !creep.memory.dest || hostiles > 0 || orange( creep, Game.getObjectById( creep.memory.dest ) ) < 2 || creep.ticksToLive / 12 == Math.floor( creep.ticksToLive / 12 ) ) {
+    	    if ( !creep.memory.dest || hostiles > 0 || orange( creep, Game.getObjectById( creep.memory.dest ) ) < 2 || creep.ticksToLive / 36 == Math.floor( creep.ticksToLive / 36 ) ) {
     	        var supplyLink = null, maxR = 99;
-    	        for( var i = 0; i < rm.li.length; i++ ) {
-    	            var sl = Game.getObjectById( rm.li[i] );
-    	            if ( sl.energy > 0 && !sl.pos.inRangeTo( creep.room.storage, 2 ) && orange( creep, sl ) < maxR && sl.pos.findInRange( FIND_MY_CREEPS, 1, { filter: function(object) { return object.getActiveBodyparts( WORK ) > 0; } } ).length == 0 ) { supplyLink = sl; maxR = orange( creep, sl ); }
+    	        if ( rm.li !== undefined ) {
+        	        for( var i = 0; i < rm.li.length; i++ ) {
+        	            var sl = Game.getObjectById( rm.li[i] );
+        	            if ( sl.energy > 0 && !sl.pos.inRangeTo( creep.room.storage, 2 ) && orange( creep, sl ) < maxR && sl.pos.findInRange( FIND_MY_CREEPS, 1, { filter: function(object) { return object.getActiveBodyparts( WORK ) > 0; } } ).length == 0 ) { supplyLink = sl; maxR = orange( creep, sl ); }
+        	        }
     	        }
                 var source = null;
                 if ( creep.memory.target && Game.flags[creep.memory.target] ) { source = Game.flags[creep.memory.target]; if ( creep.memory.role == 'sup' && creep.carry.energy == 0 ) source = null; }
+                if ( !source && creep.memory.target && creep.memory.role == 'sup' && Game.creeps[creep.memory.target] ) { source = Game.creeps[creep.memory.target]; if ( creep.memory.role == 'sup' && creep.carry.energy == 0 ) source = null; }
                 if ( !source && creep.memory.rally && Game.flags['o'+creep.memory.rally] && Game.flags['o'+creep.memory.rally].room != creep.room ) source = Game.flags['o'+creep.memory.rally]; 
                 if ( !source && Game.flags['o'+creep.name] && Game.flags['o'+creep.name].room != creep.room ) source = Game.flags['o'+creep.name]; 
                 
@@ -1225,10 +1305,15 @@ function rC() {
 
                 var eMod = 0;
                 if ( creep.memory.spr < 8 && creep.memory.spr > 0 ) eMod = ( creep.carryCapacity * .75 ) / creep.memory.spr;
-                if ( !source && creep.memory.role == 'sup' && creep.carry.energy > eMod && creep.memory.noExt !== undefined ) source = creep.pos.findClosestByRange( FIND_MY_CREEPS, { filter: function(object) { return object.memory.role != 'miner' && object.getActiveBodyparts( WORK ) > 9 && object.carry.energy < object.carryCapacity - 20; } } );
-                if ( !source && creep.memory.role == 'sup' && creep.carry.energy > eMod && creep.memory.noExt !== undefined ) source = creep.pos.findClosestByRange( FIND_MY_CREEPS, { filter: function(object) { return object.memory.role != 'miner' && object.getActiveBodyparts( WORK ) > 9; } } );
-                if ( !source && creep.memory.role == 'sup' && creep.carry.energy > eMod ) source = creep.pos.findClosestByRange( FIND_MY_CREEPS, { filter: function(object) { return object.memory.role != 'miner' && object.getActiveBodyparts( WORK ) > 1 && object.carry.energy < object.carryCapacity - 10; } } );
-                
+
+                if ( !source && creep.memory.role == 'sup' && creep.carry.energy > eMod ) {
+                    var maxR = 99, eLevel = 0;
+                    for ( var i = 0; i < rm.wo.length; i++ ) {
+                        var worker = Game.getObjectById( rm.wo[i] );
+                        if ( worker.carry.energy < worker.carryCapacity && ( orange( creep, worker ) < maxR || ( orange( creep, worker ) == maxR && worker.carry.energy < eLevel ) && worker.memory.role != 'miner' && ( creep.memory.noExt === undefined || worker.getActiveBodyparts( WORK ) > 9 ) ) ) { source = worker; maxR = orange( creep, worker ); eLevel = worker.carry.energy; }
+                    }
+                }
+
                 // Determine where to return to to get or give energy
                 if ( creep.memory.role == 'harv' && Game.flags[creep.room.name] !== undefined ) base = Game.flags[creep.room.name];
                 var altSource = base, saveAlt = base; 
@@ -1247,11 +1332,11 @@ function rC() {
                 if ( creep.memory.role == 'trans' && creep.carry.energy < creep.carryCapacity * harvFull ) source = Game.spawns[creep.memory.spawn]; 
                 if ( creep.memory.role == 'trans' && creep.carry.energy >= creep.carryCapacity * harvFull && Game.flags['o'+creep.memory.rally] && Game.flags['o'+creep.memory.rally].room == creep.room && creep.room.storage ) source = creep.room.storage; 
     
-                if ( ( !source || ( ( creep.memory.rally === undefined ) && creep.memory.target === undefined ) || ( source.room == creep.room && !creep.pos.inRangeTo( source, 1 ) && creep.memory.role == 'harv' && !( creep.pos.x == 0 || creep.pos.x == 49 || creep.pos.y == 0 || creep.pos.y == 49 ) ) ) && creep.carry.energy < creep.carryCapacity * harvFull && !creep.memory.returnToBase && !creep.memory.loot ) {
-                    if ( creep.memory.role == 'sup' ) {
+                if ( ( !source || ( ( creep.memory.rally === undefined ) && ( creep.memory.target === undefined || creep.memory.role == 'sup' ) ) || ( source.room == creep.room && !creep.pos.inRangeTo( source, 1 ) && creep.memory.role == 'harv' && !( creep.pos.x == 0 || creep.pos.x == 49 || creep.pos.y == 0 || creep.pos.y == 49 ) ) ) && creep.carry.energy < creep.carryCapacity * harvFull && !creep.memory.returnToBase && !creep.memory.loot ) {
+                    if ( creep.memory.role == 'sup' && creep.carry.energy == 0 ) {
                         var energyChunk = creep.pos.findClosestByRange( creep.room.memory.allEnergy, { filter: function(object) { return object.energy > creep.carryCapacity / 3; } } );
-                        if ( supplyLink ) source = supplyLink;
-            	        if ( !source || ( creep.room.storage && range( creep, creep.room.storage ) - 3 < range( creep, source ) ) ) source = creep.room.storage;
+                        if ( creep.room.storage ) source = creep.room.storage;
+            	        if ( !source || ( supplyLink && range( creep, supplyLink ) + 3 < range( creep, source ) ) ) source = supplyLink;
                         if ( !source || ( energyChunk && range( creep, energyChunk ) < range( creep, source ) ) ) source = energyChunk;
                     }
                     if ( creep.memory.role == 'harv' ) {
@@ -1327,7 +1412,7 @@ function rC() {
 
     	rSlow( creep.name + ' Healer Movement' );
         // Healers
-    	if ( creep.fatigue == 0 && !creep.memory.moveOrder && creep.getActiveBodyparts( HEAL ) > creep.hitsMax / 300 || ( creep.getActiveBodyparts( HEAL ) > 0 && creep.getActiveBodyparts( RANGED_ATTACK ) == 0 ) ) {  
+    	if ( creep.fatigue == 0 && !creep.memory.moveOrder && creep.getActiveBodyparts( HEAL ) > creep.hitsMax / 300 || ( creep.getActiveBodyparts( HEAL ) > 0 && creep.getActiveBodyparts( RANGED_ATTACK ) == 0 && creep.hitsMax < 2000 ) ) {  
             if ( creep.getActiveBodyparts( HEAL ) > Memory.healerHeal && creep.getActiveBodyparts(HEAL) > creep.hitsMax / 700 ) { Memory.healerHeal = creep.getActiveBodyparts( HEAL ); Memory.healer = creep.id; }
     	    var safedistance = 3;
             var target = -1, targetNeed = 0, need = 0;
@@ -1428,7 +1513,7 @@ function rC() {
 function logCpu( creep ) {
     creep.memory.usedCpu = Math.floor( ( Game.getUsedCpu() - startCpu ) * 100 ) / 100;
     creep.room.memory.cpuUse = creep.room.memory.cpuUse + creep.memory.usedCpu;
-    if ( Game.flags.diag ) creep.say( creep.memory.usedCpu );
+    if ( Game.flags.diag && creep.memory.usedCpu > .5 ) creep.say( creep.memory.usedCpu );
     if ( creep.memory.usedCpu > topUserAmount ) { topUserAmount = creep.memory.usedCpu; topUser = creep; }
     if ( creep.memory.usedCpu > rLevel + 1 ) console.log( creep.name + ' ' + creep.memory.usedCpu + '.' + creep.memory.epathed + '.' + creep.memory.mapping + ' ' + creep.memory.lastMove + '  ER: ' + creep.memory.er + '  SPR: ' + creep.memory.spr + '  Grid: ' + creep.memory.gridlock + '  Hits: ' + creep.hits + '/' + creep.hitsMax );
     if ( creep.memory.role ) {
@@ -1572,7 +1657,7 @@ function mov( creep, dest, avo, ig ) {
 	creep.memory.y2 = creep.memory.y1;
 	creep.memory.y1 = creep.pos.y;
 
-    var ru = 10;
+    var ru = 20;
     if ( creep.memory.mil || creep.memory.gridlock > 4 ) ru = 0;
     if ( !creep.memory.spr ) creep.memory.spr = 99;
     if ( creep.memory.spr < 4 && dest && orange( creep, dest ) < 4 ) ig = false;
@@ -1586,8 +1671,8 @@ function mov( creep, dest, avo, ig ) {
     else {
         var aRoom = creep.room;
         if ( dest && dest.room !== undefined ) aRoom = dest.room;
-        if ( Game.flags.opt && ig && dest && dest.pos && dest.pos.x !== undefined && dest.pos.y !== undefined && aRoom.name !== undefined && orange( creep, dest ) > mappingRange ) emov( creep, dest ); else {
-            if ( !creep.memory.mil && orange( creep, dest ) < 40 && ( bypassCode || Game.flags['b'+creep.room.name] ) /* && creep.pos.x > 2 && creep.pos.x < 47 && creep.pos.y > 2 && creep.pos.y < 47 */ ) {
+        if ( Game.flags.opt && ig && dest && dest.pos && dest.pos.x !== undefined && dest.pos.y !== undefined && aRoom.name !== undefined && orange( creep, dest ) > mappingRange && !Game.flags[ creep.room.name ] ) emov( creep, dest ); else {
+            if ( !creep.memory.mil && orange( creep, dest ) < 40 && ( bypassCode || Game.flags['b'+creep.room.name] ) ) {
                 creep.memory.lastMove = creep.memory.lastMove + ' using bypass code...  avo: ' + avo.length + '  Ig: ' + ig + '  dRange: ' + orange( creep, dest );
                 bypass( creep, dest );
             } else {
@@ -1668,7 +1753,7 @@ function reroute( creep, dest ) {
 }
 
 function bypass( creep, dest ) {
-    if ( creep.room != dest.room ) { aMoveTo( creep, dest, [], 5, false, 2000 ); return; }
+    if ( creep.room != dest.room || Game.flags[ creep.room.name ] ) { aMoveTo( creep, dest, [], 5, false, 2000 ); return; }
     if ( orange( creep, dest ) < 1 ) { creep.memory.moveOrder = 0; return; }
     var xMin = creep.pos.x - 1, xMax = creep.pos.x + 1, yMin = creep.pos.y - 1, yMax = creep.pos.y + 1, favX = creep.pos.x, favY = creep.pos.y, fav = -90, likeThis = 0;
     
